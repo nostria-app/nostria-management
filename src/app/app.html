@@ -1,0 +1,20 @@
+<header class="app-header">
+  <div class="header-content">
+    <div class="logo">
+      <h1>Nostria Management Portal</h1>
+    </div>
+    <nav class="main-nav">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
+      <a routerLink="/customers" routerLinkActive="active" class="nav-link">Customers</a>
+      <a routerLink="/servers" routerLinkActive="active" class="nav-link">Servers</a>
+    </nav>
+  </div>
+</header>
+
+<main class="app-main">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="app-footer">
+  <p>&copy; 2024 Nostria Management Portal. Built with Angular {{ angularVersion }}</p>
+</footer>

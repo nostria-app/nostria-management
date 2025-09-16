@@ -1,0 +1,106 @@
+<div class="customer-list">
+  <div class="page-header">
+    <h2>Customer Management</h2>
+    <button 
+      class="refresh-btn" 
+      (click)="refreshCustomers()" 
+      [disabled]="isLoading()"
+      title="Refresh customer list">
+      <span [class.spinning]="isLoading()">🔄</span>
+      Refresh
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">
+      <span>⚠️</span>
+      <span>{{ error() }}</span>
+      <button (click)="refreshCustomers()">Retry</button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading customers...</p>
+    </div>
+  } @else {
+    @if (customers().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <h3>No customers found</h3>
+        <p>There are currently no customers in the system.</p>
+        <button (click)="refreshCustomers()" class="retry-btn">
+          Check Again
+        </button>
+      </div>
+    } @else {
+      <div class="customer-grid">
+        @for (customer of customers(); track customer.id) {
+          <div class="customer-card">
+            <div class="customer-header">
+              <div class="customer-avatar">
+                <span>{{ customer.name.charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="customer-info">
+                <h3>{{ customer.name }}</h3>
+                <p class="customer-email">{{ customer.email }}</p>
+              </div>
+              <div class="customer-status">
+                <span [class]="getStatusClass(customer.status)">
+                  {{ customer.status | titlecase }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="customer-details">
+              <div class="detail-item">
+                <span class="detail-label">Customer ID:</span>
+                <span class="detail-value">{{ customer.id }}</span>
+              </div>
+              
+              <div class="detail-item">
+                <span class="detail-label">Created:</span>
+                <span class="detail-value">{{ formatDate(customer.createdAt) }}</span>
+              </div>
+              
+              @if (customer.lastLoginAt) {
+                <div class="detail-item">
+                  <span class="detail-label">Last Login:</span>
+                  <span class="detail-value">{{ formatDate(customer.lastLoginAt) }}</span>
+                </div>
+              } @else {
+                <div class="detail-item">
+                  <span class="detail-label">Last Login:</span>
+                  <span class="detail-value no-data">Never</span>
+                </div>
+              }
+            </div>
+
+            <div class="customer-actions">
+              <button class="action-btn view" title="View Details">
+                <span>👁️</span>
+                View
+              </button>
+              <button class="action-btn edit" title="Edit Customer">
+                <span>✏️</span>
+                Edit
+              </button>
+              @if (customer.status !== 'suspended') {
+                <button class="action-btn suspend" title="Suspend Customer">
+                  <span>⏸️</span>
+                  Suspend
+                </button>
+              } @else {
+                <button class="action-btn activate" title="Activate Customer">
+                  <span>▶️</span>
+                  Activate
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
