@@ -291,7 +291,8 @@ export class AccountManagement implements OnInit {
 
   formatDate(timestamp?: number): string {
     if (!timestamp) return 'N/A';
-    return new Date(timestamp * 1000).toLocaleString();
+    // API returns timestamps in milliseconds, so use directly
+    return new Date(timestamp).toLocaleString();
   }
 
   formatPrice(priceCents: number): string {
@@ -401,12 +402,15 @@ export class AccountManagement implements OnInit {
 
   isAccountExpired(expires?: number): boolean {
     if (!expires) return false;
-    return expires * 1000 < Date.now();
+    // API returns timestamps in milliseconds, so compare directly
+    return expires < Date.now();
   }
 
   getTimeUntilExpiration(expires: number): string {
+    // API returns timestamps in milliseconds, convert to seconds for calculation
+    const expiresInSeconds = Math.floor(expires / 1000);
     const now = Math.floor(Date.now() / 1000);
-    const diff = expires - now;
+    const diff = expiresInSeconds - now;
     
     if (diff <= 0) return 'Expired';
     

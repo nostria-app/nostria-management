@@ -10,7 +10,8 @@ export class UtilsService {
    */
   formatDate(timestamp?: number): string {
     if (!timestamp) return 'N/A';
-    return new Date(timestamp * 1000).toLocaleString();
+    // API returns timestamps in milliseconds, so use directly
+    return new Date(timestamp).toLocaleString();
   }
 
   /**
@@ -20,7 +21,8 @@ export class UtilsService {
     if (!timestamp) return 'N/A';
     
     const now = Date.now();
-    const time = timestamp * 1000;
+    // API returns timestamps in milliseconds, so use directly
+    const time = timestamp;
     const diffMs = now - time;
     
     const seconds = Math.floor(diffMs / 1000);
@@ -261,7 +263,8 @@ export class UtilsService {
    */
   isExpired(timestamp?: number): boolean {
     if (!timestamp) return false;
-    return timestamp * 1000 <= Date.now();
+    // API returns timestamps in milliseconds, so compare directly
+    return timestamp <= Date.now();
   }
 
   /**
@@ -270,7 +273,8 @@ export class UtilsService {
   getTimeUntilExpiration(timestamp?: number): string {
     if (!timestamp) return 'Never';
     const now = Date.now();
-    const expiration = timestamp * 1000;
+    // API returns timestamps in milliseconds, so use directly
+    const expiration = timestamp;
     
     if (expiration <= now) return 'Expired';
     
