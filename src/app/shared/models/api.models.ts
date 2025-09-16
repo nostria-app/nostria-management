@@ -197,9 +197,21 @@ export interface CreatePaymentRequest {
 
 export interface Payment {
   id: string;
+  type: string;
+  paymentType: string;
+  lnHash?: string;
   lnInvoice: string;
-  status: 'pending' | 'expired' | 'paid';
+  lnAmountSat: number;
+  tier: Tier;
+  billingCycle: BillingCycle;
+  priceCents: number;
+  pubkey: string;
+  isPaid: boolean;
+  paid?: number;
   expires: number;
+  status: 'pending' | 'expired' | 'paid' | 'cancelled';
+  created: number;
+  modified: number;
 }
 
 // Settings Management
@@ -337,4 +349,59 @@ export interface NotificationSettings {
 export interface Error {
   error: string;
   message?: string;
+}
+
+// NIP-98 Authentication Types
+export interface NostrEvent {
+  id?: string;
+  pubkey?: string;
+  created_at: number;
+  kind: number;
+  tags: string[][];
+  content: string;
+  sig?: string;
+}
+
+export interface NostrEventTemplate {
+  created_at: number;
+  kind: number;
+  tags: string[][];
+  content: string;
+}
+
+export interface NostrExtension {
+  getPublicKey(): Promise<string>;
+  signEvent(event: NostrEventTemplate): Promise<NostrEvent>;
+  getRelays?(): Promise<Record<string, { read: boolean; write: boolean }>>;
+  nip04?: {
+    encrypt(pubkey: string, plaintext: string): Promise<string>;
+    decrypt(pubkey: string, ciphertext: string): Promise<string>;
+  };
+}
+
+export interface Nip98AuthOptions {
+  includeAuthorizationScheme?: boolean;
+  payload?: Record<string, any>;
+}
+
+export interface Nip98Token {
+  token: string;
+  event: NostrEvent;
+  createdAt: number;
+}
+
+export interface AuthenticationState {
+  isAuthenticated: boolean;
+  pubkey?: string;
+  extensionName?: string;
+  supportedNips?: number[];
+}
+
+declare global {
+  interface Window {
+    nostr?: NostrExtension;
+    nos2x?: NostrExtension;
+    alby?: NostrExtension;
+    [key: string]: any;
+  }
 }

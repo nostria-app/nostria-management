@@ -210,4 +210,210 @@
       }
     </section>
   }
+
+  <!-- Account Listing Section -->
+  <section class="account-listing">
+    <div class="section-header">
+      <h2>Account Directory</h2>
+      <p class="section-subtitle">Browse account records using authenticated API access</p>
+    </div>
+
+    <!-- Nostr Connection Status -->
+    <div class="nostr-status">
+      @if (isNostrConnected()) {
+        <div class="status-connected">
+          <span class="icon">🔗</span>
+          <span>Connected to Nostr extension</span>
+          <button class="btn-secondary btn-sm" (click)="disconnectNostr()">Disconnect</button>
+        </div>
+      } @else {
+        <div class="status-disconnected">
+          <span class="icon">🔒</span>
+          <span>Not connected to Nostr extension</span>
+          @if (isNostrExtensionAvailable) {
+            <button class="btn-primary btn-sm" (click)="connectToNostr()">Connect</button>
+          } @else {
+            <span class="error-text">No Nostr extension found. Please install nos2x, Alby, or similar.</span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- List Accounts Form -->
+    <form [formGroup]="listAccountsForm" (ngSubmit)="listAccounts()" class="form-container">
+      <div class="form-group">
+        <label for="accountLimit">Number of accounts to retrieve (max 1000):</label>
+        <input
+          type="number"
+          id="accountLimit"
+          formControlName="limit"
+          min="1"
+          max="1000"
+          class="form-control"
+        />
+        @if (listAccountsForm.get('limit')?.invalid && listAccountsForm.get('limit')?.touched) {
+          <div class="form-error">Please enter a valid limit (1-1000)</div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="listAccountsForm.invalid || isListingAccounts() || !isNostrConnected()"
+        >
+          @if (isListingAccounts()) {
+            <span class="loading-spinner"></span>
+            Authenticating & Loading...
+          } @else {
+            Sign Message & List Accounts
+          }
+        </button>
+      </div>
+    </form>
+
+    <!-- List Accounts Error -->
+    @if (listAccountsError()) {
+      <div class="error">
+        <span class="icon">⚠️</span>
+        {{ listAccountsError() }}
+      </div>
+    }
+
+    <!-- Account Directory -->
+    @if (listedAccounts().length > 0) {
+      <div class="results">
+        <h3>Account Directory ({{ listedAccounts().length }} accounts)</h3>
+        <div class="accounts-table-detailed">
+          @for (account of listedAccounts(); track account.pubkey) {
+            <div class="account-card">
+              <!-- Header with Pubkey and Status -->
+              <div class="account-header">
+                <div class="account-pubkey-section">
+                  <label>Public Key:</label>
+                  <div class="pubkey-container">
+                    <a 
+                      href="https://nostria.app/p/{{ account.pubkey }}" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="pubkey-link"
+                      title="View user profile on Nostria"
+                    >
+                      {{ account.pubkey.substring(0, 8) }}...{{ account.pubkey.substring(56) }}
+                    </a>
+                    <button 
+                      class="btn-sm btn-outline copy-btn" 
+                      (click)="copyToClipboard(account.pubkey)"
+                      title="Copy Public Key"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+                <span class="tier-badge" [class]="getAccountStatusClass(account)">
+                  {{ getTierDisplayName(account.tier) }}
+                </span>
+              </div>
+
+              <!-- Account Details Grid -->
+              <div class="account-details">
+                <!-- First Row: Username, Tier, Status -->
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <label>Username:</label>
+                    <span class="username">
+                      @if (account.username) {
+                        {{ account.username }}
+                      } @else {
+                        <em class="no-username">No username set</em>
+                      }
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Subscription:</label>
+                    <span class="tier-info">{{ getTierDisplayName(account.tier) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Notifications/Day:</label>
+                    <span class="notifications">{{ account.entitlements.notificationsPerDay }}</span>
+                  </div>
+                </div>
+
+                <!-- Second Row: Dates -->
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <label>Signup Date:</label>
+                    <span class="timestamp">{{ formatDate(account.signupDate) }}</span>
+                  </div>
+                  @if (account.lastLoginDate) {
+                    <div class="detail-item">
+                      <label>Last Login:</label>
+                      <span class="timestamp">{{ formatDate(account.lastLoginDate) }}</span>
+                    </div>
+                  }
+                  @if (account.expires) {
+                    <div class="detail-item">
+                      <label>Expires:</label>
+                      <span class="timestamp" [class.expired]="isAccountExpired(account.expires)">
+                        {{ formatDate(account.expires) }}
+                        @if (!isAccountExpired(account.expires)) {
+                          <br><small class="expiry-countdown">({{ getTimeUntilExpiration(account.expires) }})</small>
+                        }
+                      </span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Features Row -->
+                <div class="detail-row">
+                  <div class="detail-item full-width">
+                    <label>Features:</label>
+                    <div class="features-list">
+                      @for (feature of account.entitlements.features; track feature.key) {
+                        <span class="feature-tag">{{ feature.label }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="account-actions">
+                <a 
+                  href="https://nostria.app/p/{{ account.pubkey }}" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="btn-sm btn-primary"
+                  title="View Profile on Nostria"
+                >
+                  👤 View Profile
+                </a>
+                <button 
+                  class="btn-sm btn-outline" 
+                  (click)="copyToClipboard(account.pubkey)"
+                  title="Copy Public Key"
+                >
+                  📋 Copy Pubkey
+                </button>
+                @if (account.username) {
+                  <button 
+                    class="btn-sm btn-outline" 
+                    (click)="copyToClipboard(account.username)"
+                    title="Copy Username"
+                  >
+                    📋 Copy Username
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    } @else if (!isListingAccounts() && !listAccountsError()) {
+      <div class="empty-state">
+        <p>Connect your Nostr extension and click "Sign Message & List Accounts" to retrieve account records</p>
+        <p><em>API endpoint: GET /api/account/list</em></p>
+      </div>
+    }
+  </section>
 </div>

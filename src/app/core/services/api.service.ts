@@ -8,13 +8,19 @@ import {
   CreatePaymentRequest, Payment, UserSettingsUpdate, UserSettingsResponse,
   UsersByReleaseChannel, ServiceStatus, HealthStatus, PushSubscription,
   NotificationData, DevicesResponse, UserSettingsRequest, UserSettings,
-  AdminSetUserSettingsRequest, ReleaseChannelUpdateRequest, ReleaseChannel
+  AdminSetUserSettingsRequest, ReleaseChannelUpdateRequest, ReleaseChannel,
+  // NIP-98 Auth Types
+  Nip98AuthOptions
 } from '../../shared/models/api.models';
+import { Nip98AuthService } from './nip98-auth.service';
+import { NostrExtensionService } from './nostr-extension.service';
 
 export interface ApiOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   body?: any;
   headers?: Record<string, string>;
+  useNip98Auth?: boolean;
+  nip98Options?: Nip98AuthOptions;
 }
 
 @Injectable({
@@ -23,13 +29,41 @@ export interface ApiOptions {
 export class ApiService {
   private readonly baseUrl = 'http://localhost:3000/api'; // Nostria API endpoint
 
+  constructor(
+    private nip98Auth: Nip98AuthService,
+    private nostrExtension: NostrExtensionService
+  ) {}
+
   private async makeRequest<T>(endpoint: string, options: ApiOptions = {}): Promise<ApiResponse<T>> {
-    const { method = 'GET', body, headers = {} } = options;
+    const { method = 'GET', body, headers = {}, useNip98Auth = false, nip98Options = {} } = options;
 
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+
+    // Add NIP-98 authentication header if requested
+    if (useNip98Auth) {
+      try {
+        const fullUrl = `${this.baseUrl}${endpoint}`;
+        const token = await this.nip98Auth.getToken(
+          fullUrl, 
+          method, 
+          {
+            ...nip98Options,
+            payload: body
+          }
+        );
+        defaultHeaders['Authorization'] = `Nostr ${token}`;
+      } catch (error) {
+        console.error('Failed to generate NIP-98 auth token:', error);
+        return {
+          data: null as T,
+          success: false,
+          message: `Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        };
+      }
+    }
 
     const requestOptions: RequestInit = {
       method,
@@ -310,6 +344,75 @@ export class ApiService {
         'Authorization': `Bearer ${authToken}`
       },
       body: subscription
+    });
+  }
+
+  // NIP-98 Authentication Helper Methods
+
+  /**
+   * Make an authenticated request using NIP-98
+   * @param endpoint API endpoint
+   * @param options Request options with NIP-98 auth enabled
+   */
+  async makeAuthenticatedRequest<T>(endpoint: string, options: Omit<ApiOptions, 'useNip98Auth'> = {}): Promise<ApiResponse<T>> {
+    return this.makeRequest<T>(endpoint, {
+      ...options,
+      useNip98Auth: true
+    });
+  }
+
+  /**
+   * Check if NIP-98 authentication is available
+   */
+  isNip98AuthAvailable(): boolean {
+    return this.nostrExtension.isExtensionAvailable();
+  }
+
+  /**
+   * Connect to Nostr extension for NIP-98 authentication
+   */
+  async connectNostrExtension(): Promise<string> {
+    return this.nostrExtension.connect();
+  }
+
+  /**
+   * Get current Nostr authentication state
+   */
+  getNostrAuthState() {
+    return this.nostrExtension.getAuthState();
+  }
+
+  /**
+   * Disconnect from Nostr extension
+   */
+  disconnectNostrExtension(): void {
+    this.nostrExtension.disconnect();
+  }
+
+  /**
+   * Example: Get user settings with NIP-98 authentication
+   */
+  async getUserSettingsWithAuth(pubkey: string): Promise<ApiResponse<UserSettingsResponse>> {
+    return this.makeAuthenticatedRequest<UserSettingsResponse>(`/settings/${pubkey}`);
+  }
+
+  /**
+   * Example: Update user settings with NIP-98 authentication
+   */
+  async updateUserSettingsWithAuth(pubkey: string, settings: UserSettingsUpdate): Promise<ApiResponse<UserSettingsResponse>> {
+    return this.makeAuthenticatedRequest<UserSettingsResponse>(`/settings/${pubkey}`, {
+      method: 'PUT',
+      body: settings
+    });
+  }
+
+  /**
+   * Example: Create account with NIP-98 authentication
+   */
+  async createAccountWithAuth(account: AddAccountRequest): Promise<ApiResponse<Account>> {
+    return this.makeAuthenticatedRequest<Account>('/accounts', {
+      method: 'POST',
+      body: account
     });
   }
 }

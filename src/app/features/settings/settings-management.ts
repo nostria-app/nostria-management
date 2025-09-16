@@ -16,7 +16,6 @@ import {
   styleUrl: './settings-management.scss'
 })
 export class SettingsManagement implements OnInit {
-  private apiService = new ApiService();
   private fb = new FormBuilder();
   private utils = new UtilsService();
 
@@ -62,7 +61,7 @@ export class SettingsManagement implements OnInit {
     { value: 'dev', label: 'Development' }
   ];
 
-  constructor() {
+  constructor(private apiService: ApiService) {
     this.settingsForm = this.fb.group({
       pubkey: ['', [Validators.required, Validators.pattern(/^[a-fA-F0-9]{64}$/)]],
       tier: ['free', [Validators.required]],

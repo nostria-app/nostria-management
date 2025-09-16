@@ -15,7 +15,6 @@ import {
   styleUrl: './payment-management.scss'
 })
 export class PaymentManagement implements OnInit {
-  private apiService = new ApiService();
   private fb = new FormBuilder();
   private utils = new UtilsService();
 
@@ -32,12 +31,19 @@ export class PaymentManagement implements OnInit {
   paymentCheckError = signal<string | null>(null);
   checkedPayment = signal<Payment | null>(null);
 
+  // List payments with NIP-98 auth
+  isListingPayments = signal(false);
+  listPaymentsError = signal<string | null>(null);
+  listedPayments = signal<Payment[]>([]);
+  isNostrConnected = signal(false);
+
   // Payment history (simulated - would come from real API)
   paymentHistory = signal<Payment[]>([]);
 
   // Forms
   createPaymentForm: FormGroup;
   checkPaymentForm: FormGroup;
+  listPaymentsForm: FormGroup;
 
   // Available options
   tierOptions: { value: Tier; label: string }[] = [
@@ -52,7 +58,7 @@ export class PaymentManagement implements OnInit {
     { value: 'yearly', label: 'Yearly', discount: '15% off' }
   ];
 
-  constructor() {
+  constructor(private apiService: ApiService) {
     this.createPaymentForm = this.fb.group({
       tierName: ['premium', [Validators.required]],
       billingCycle: ['monthly', [Validators.required]],
@@ -63,11 +69,20 @@ export class PaymentManagement implements OnInit {
       pubkey: ['', [Validators.required, Validators.pattern(/^[a-fA-F0-9]{64}$/)]],
       paymentId: ['', [Validators.required]]
     });
+
+    this.listPaymentsForm = this.fb.group({
+      limit: [50, [Validators.required, Validators.min(1), Validators.max(100)]]
+    });
   }
 
   ngOnInit() {
     this.loadTiers();
     this.loadPaymentHistory();
+    this.checkNostrConnection();
+  }
+
+  checkNostrConnection() {
+    this.isNostrConnected.set(this.apiService.isNip98AuthAvailable());
   }
 
   async loadTiers() {
@@ -93,21 +108,53 @@ export class PaymentManagement implements OnInit {
     const mockPayments: Payment[] = [
       {
         id: 'pay_1234567890',
+        type: 'payment',
+        paymentType: 'ln',
+        lnHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
         lnInvoice: 'lnbc100u1pj...',
+        lnAmountSat: 10000,
+        tier: 'premium',
+        billingCycle: 'monthly',
+        priceCents: 1000,
+        pubkey: '8e9f64b35e7e4384b5248f1d4294f109bb8d3442b04d7c59a62c04e702441488',
+        isPaid: true,
+        paid: Math.floor(Date.now() / 1000) - 3600,
         status: 'paid',
-        expires: Math.floor(Date.now() / 1000) + 3600
+        expires: Math.floor(Date.now() / 1000) + 3600,
+        created: Math.floor(Date.now() / 1000) - 7200,
+        modified: Math.floor(Date.now() / 1000) - 3600
       },
       {
         id: 'pay_0987654321',
+        type: 'payment',
+        paymentType: 'ln',
         lnInvoice: 'lnbc50u1pj...',
+        lnAmountSat: 5000,
+        tier: 'premium',
+        billingCycle: 'monthly',
+        priceCents: 500,
+        pubkey: 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
+        isPaid: false,
         status: 'expired',
-        expires: Math.floor(Date.now() / 1000) - 3600
+        expires: Math.floor(Date.now() / 1000) - 3600,
+        created: Math.floor(Date.now() / 1000) - 10800,
+        modified: Math.floor(Date.now() / 1000) - 3600
       },
       {
         id: 'pay_1122334455',
+        type: 'payment',
+        paymentType: 'ln',
         lnInvoice: 'lnbc200u1pj...',
+        lnAmountSat: 20000,
+        tier: 'premium_plus',
+        billingCycle: 'quarterly',
+        priceCents: 2500,
+        pubkey: 'f1e2d3c4b5a6978901234567890abcdef1234567890abcdef1234567890abcde',
+        isPaid: false,
         status: 'pending',
-        expires: Math.floor(Date.now() / 1000) + 1800
+        expires: Math.floor(Date.now() / 1000) + 1800,
+        created: Math.floor(Date.now() / 1000) - 900,
+        modified: Math.floor(Date.now() / 1000) - 900
       }
     ];
     this.paymentHistory.set(mockPayments);
@@ -260,5 +307,87 @@ export class PaymentManagement implements OnInit {
     this.checkedPayment.set(null);
     this.createPaymentError.set(null);
     this.paymentCheckError.set(null);
+    this.listPaymentsError.set(null);
+    this.listedPayments.set([]);
+  }
+
+  // NIP-98 Authentication and Payment Listing Methods
+
+  get isNostrExtensionAvailable(): boolean {
+    return this.apiService.isNip98AuthAvailable();
+  }
+
+  async connectToNostr() {
+    try {
+      const pubkey = await this.apiService.connectNostrExtension();
+      this.isNostrConnected.set(true);
+      console.log('Connected to Nostr extension with pubkey:', pubkey);
+    } catch (error) {
+      console.error('Failed to connect to Nostr extension:', error);
+      this.listPaymentsError.set(
+        error instanceof Error ? error.message : 'Failed to connect to Nostr extension'
+      );
+    }
+  }
+
+  async listPayments() {
+    if (this.listPaymentsForm.invalid) return;
+
+    // Check if Nostr extension is connected
+    if (!this.apiService.getNostrAuthState().isAuthenticated) {
+      this.listPaymentsError.set('Please connect to your Nostr extension first');
+      return;
+    }
+
+    this.isListingPayments.set(true);
+    this.listPaymentsError.set(null);
+    this.listedPayments.set([]);
+
+    try {
+      const formValue = this.listPaymentsForm.value;
+      const limit = formValue.limit || 50;
+      
+      // Use authenticated request with NIP-98
+      const response = await this.apiService.makeAuthenticatedRequest<Payment[]>(`/payment?limit=${limit}`, {
+        method: 'GET'
+      });
+
+      if (response.success && response.data) {
+        this.listedPayments.set(response.data);
+      } else {
+        this.listPaymentsError.set(response.message || 'Failed to load payments');
+      }
+    } catch (error) {
+      this.listPaymentsError.set(
+        error instanceof Error ? error.message : 'Network error loading payments'
+      );
+    } finally {
+      this.isListingPayments.set(false);
+    }
+  }
+
+  disconnectNostr() {
+    this.apiService.disconnectNostrExtension();
+    this.isNostrConnected.set(false);
+    this.listedPayments.set([]);
+    this.listPaymentsError.set(null);
+  }
+
+  getPaymentStatusClass(status: string): string {
+    switch (status) {
+      case 'paid': return 'success';
+      case 'pending': return 'warning';
+      case 'expired': return 'danger';
+      case 'cancelled': return 'secondary';
+      default: return 'secondary';
+    }
+  }
+
+  formatTimestamp(timestamp: number): string {
+    return new Date(timestamp * 1000).toLocaleString();
+  }
+
+  isTimestampExpired(timestamp: number): boolean {
+    return timestamp * 1000 < Date.now();
   }
 }

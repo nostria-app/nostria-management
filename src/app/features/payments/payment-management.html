@@ -273,6 +273,209 @@
     }
   </div>
 
+  <!-- List Payments with NIP-98 Authentication Section -->
+  <div class="section">
+    <div class="section-header">
+      <h2>List Payments (Authenticated)</h2>
+      <p class="section-subtitle">Retrieve payment records using Nostr authentication</p>
+    </div>
+
+    <!-- Nostr Connection Status -->
+    <div class="nostr-status">
+      @if (isNostrConnected()) {
+        <div class="status-connected">
+          <span class="icon">🔗</span>
+          <span>Connected to Nostr extension</span>
+          <button class="btn-secondary btn-sm" (click)="disconnectNostr()">Disconnect</button>
+        </div>
+      } @else {
+        <div class="status-disconnected">
+          <span class="icon">🔒</span>
+          <span>Not connected to Nostr extension</span>
+          @if (isNostrExtensionAvailable) {
+            <button class="btn-primary btn-sm" (click)="connectToNostr()">Connect</button>
+          } @else {
+            <span class="error-text">No Nostr extension found. Please install nos2x, Alby, or similar.</span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- List Payments Form -->
+    <form [formGroup]="listPaymentsForm" (ngSubmit)="listPayments()" class="form-container">
+      <div class="form-group">
+        <label for="limit">Number of payments to retrieve (max 100):</label>
+        <input
+          type="number"
+          id="limit"
+          formControlName="limit"
+          min="1"
+          max="100"
+          class="form-control"
+        />
+        @if (listPaymentsForm.get('limit')?.invalid && listPaymentsForm.get('limit')?.touched) {
+          <div class="form-error">Please enter a valid limit (1-100)</div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="listPaymentsForm.invalid || isListingPayments() || !isNostrConnected()"
+        >
+          @if (isListingPayments()) {
+            <span class="loading-spinner"></span>
+            Signing & Loading...
+          } @else {
+            Sign Message & List Payments
+          }
+        </button>
+      </div>
+    </form>
+
+    <!-- List Payments Error -->
+    @if (listPaymentsError()) {
+      <div class="error">
+        <span class="icon">⚠️</span>
+        {{ listPaymentsError() }}
+      </div>
+    }
+
+    <!-- Listed Payments Results -->
+    @if (listedPayments().length > 0) {
+      <div class="results">
+        <h3>Authenticated Payment Records ({{ listedPayments().length }} found)</h3>
+        <div class="payments-table-detailed">
+          @for (payment of listedPayments(); track payment.id) {
+            <div class="payment-card">
+              <!-- Header with ID and Status -->
+              <div class="payment-header">
+                <div class="payment-id-section">
+                  <label>Payment ID:</label>
+                  <code class="payment-id">{{ payment.id }}</code>
+                </div>
+                <span class="status-badge" [class]="getPaymentStatusClass(payment.status)">
+                  {{ payment.status }}
+                </span>
+              </div>
+
+              <!-- Payment Details Grid -->
+              <div class="payment-details">
+                <!-- First Row: Type, Tier, Cycle -->
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <label>Type:</label>
+                    <span class="payment-type">
+                      {{ payment.paymentType === 'ln' ? '⚡ Lightning' : payment.paymentType }}
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Tier:</label>
+                    <span class="tier">{{ payment.tier }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Billing:</label>
+                    <span class="billing-cycle">{{ payment.billingCycle }}</span>
+                  </div>
+                </div>
+
+                <!-- Second Row: Amount, Price, User -->
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <label>Lightning Amount:</label>
+                    <span class="amount">{{ payment.lnAmountSat }} sats</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Price:</label>
+                    <span class="price">${{ (payment.priceCents / 100).toFixed(2) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>User:</label>
+                    <a 
+                      href="https://nostria.app/p/{{ payment.pubkey }}" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="pubkey-link"
+                      title="View user profile on Nostria"
+                    >
+                      {{ payment.pubkey.substring(0, 8) }}...{{ payment.pubkey.substring(56) }}
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Third Row: Timestamps -->
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <label>Created:</label>
+                    <span class="timestamp">{{ formatTimestamp(payment.created) }}</span>
+                  </div>
+                  @if (payment.paid) {
+                    <div class="detail-item">
+                      <label>Paid:</label>
+                      <span class="timestamp paid-time">{{ formatTimestamp(payment.paid) }}</span>
+                    </div>
+                  }
+                  @if (payment.expires) {
+                    <div class="detail-item">
+                      <label>Expires:</label>
+                      <span class="timestamp" [class.expired]="isTimestampExpired(payment.expires)">
+                        {{ formatTimestamp(payment.expires) }}
+                      </span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Lightning Hash (if available) -->
+                @if (payment.lnHash) {
+                  <div class="detail-row">
+                    <div class="detail-item full-width">
+                      <label>Lightning Hash:</label>
+                      <code class="ln-hash">{{ payment.lnHash }}</code>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Actions -->
+              <div class="payment-actions">
+                @if (payment.lnInvoice && payment.status !== 'paid') {
+                  <button 
+                    class="btn-sm btn-primary" 
+                    (click)="openLightningInvoice(payment.lnInvoice)"
+                    title="Open Lightning Invoice"
+                  >
+                    ⚡ Pay Invoice
+                  </button>
+                }
+                @if (payment.lnInvoice) {
+                  <button 
+                    class="btn-sm btn-outline" 
+                    (click)="copyToClipboard(payment.lnInvoice)"
+                    title="Copy Lightning Invoice"
+                  >
+                    📋 Copy Invoice
+                  </button>
+                }
+                <button 
+                  class="btn-sm btn-outline" 
+                  (click)="copyToClipboard(payment.id)"
+                  title="Copy Payment ID"
+                >
+                  📋 Copy ID
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    } @else if (!isListingPayments() && !listPaymentsError() && isNostrConnected()) {
+      <div class="empty-state">
+        <p>Click "Sign Message & List Payments" to retrieve your payment records</p>
+      </div>
+    }
+  </div>
+
   <!-- Payment History Section -->
   <div class="section">
     <div class="section-header">

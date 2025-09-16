@@ -12,7 +12,6 @@ import { ServiceStatus, HealthStatus } from '../../shared/models/api.models';
   styleUrl: './status-monitoring.scss'
 })
 export class StatusMonitoring implements OnInit, OnDestroy {
-  private apiService = new ApiService();
   private utils = new UtilsService();
   private refreshInterval?: number;
 
@@ -49,6 +48,8 @@ export class StatusMonitoring implements OnInit, OnDestroy {
     { endpoint: '/backups', status: 'ok', responseTime: 234, lastCheck: Date.now() },
     { endpoint: '/settings', status: 'ok', responseTime: 67, lastCheck: Date.now() }
   ]);
+
+  constructor(private apiService: ApiService) {}
 
   ngOnInit() {
     this.loadServiceStatus();

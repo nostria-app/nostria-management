@@ -15,7 +15,6 @@ import {
   styleUrl: './notification-management.scss'
 })
 export class NotificationManagement implements OnInit {
-  private apiService = new ApiService();
   private fb = new FormBuilder();
 
   // Signals for reactive state management
@@ -45,7 +44,7 @@ export class NotificationManagement implements OnInit {
   apiKey = ''; // TODO: Implement proper API key management
   authToken = ''; // TODO: Implement proper auth token management
 
-  constructor() {
+  constructor(private apiService: ApiService) {
     this.sendNotificationForm = this.fb.group({
       notificationType: ['direct', [Validators.required]],
       pubkeys: [''],

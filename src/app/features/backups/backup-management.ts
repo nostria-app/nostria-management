@@ -14,7 +14,6 @@ import {
   styleUrl: './backup-management.scss'
 })
 export class BackupManagement implements OnInit {
-  private apiService = new ApiService();
   private fb = new FormBuilder();
 
   // Signals for reactive state management
@@ -42,7 +41,7 @@ export class BackupManagement implements OnInit {
     { value: 'selective', label: 'Selective Backup', description: 'Backup selected data only' }
   ];
 
-  constructor() {
+  constructor(private apiService: ApiService) {
     this.createBackupForm = this.fb.group({
       backupType: ['full', [Validators.required]],
       scheduledAt: [''],
