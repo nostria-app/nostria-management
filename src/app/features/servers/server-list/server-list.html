@@ -1,0 +1,131 @@
+<div class="server-list">
+  <div class="page-header">
+    <h2>Server Management</h2>
+    <button 
+      class="refresh-btn" 
+      (click)="refreshServers()" 
+      [disabled]="isLoading()"
+      title="Refresh server list">
+      <span [class.spinning]="isLoading()">🔄</span>
+      Refresh
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">
+      <span>⚠️</span>
+      <span>{{ error() }}</span>
+      <button (click)="refreshServers()">Retry</button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading servers...</p>
+    </div>
+  } @else {
+    @if (servers().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">🖥️</div>
+        <h3>No servers found</h3>
+        <p>There are currently no servers configured in the system.</p>
+        <button (click)="refreshServers()" class="retry-btn">
+          Check Again
+        </button>
+      </div>
+    } @else {
+      <div class="server-grid">
+        @for (server of servers(); track server.id) {
+          <div class="server-card">
+            <div class="server-header">
+              <div class="server-icon">
+                <span>{{ getTypeIcon(server.type) }}</span>
+              </div>
+              <div class="server-info">
+                <h3>{{ server.name }}</h3>
+                <p class="server-type">{{ server.type | titlecase }} Server</p>
+              </div>
+              <div class="server-status">
+                <span [class]="getStatusClass(server.status)">
+                  {{ server.status | titlecase }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="server-metrics">
+              <div class="metric">
+                <span class="metric-label">CPU</span>
+                <div class="metric-bar">
+                  <div class="metric-fill" [style.width.%]="server.cpu"></div>
+                </div>
+                <span class="metric-value">{{ server.cpu }}%</span>
+              </div>
+              
+              <div class="metric">
+                <span class="metric-label">Memory</span>
+                <div class="metric-bar">
+                  <div class="metric-fill" [style.width.%]="server.memory"></div>
+                </div>
+                <span class="metric-value">{{ server.memory }}%</span>
+              </div>
+              
+              <div class="metric">
+                <span class="metric-label">Disk</span>
+                <div class="metric-bar">
+                  <div class="metric-fill" [style.width.%]="server.disk"></div>
+                </div>
+                <span class="metric-value">{{ server.disk }}%</span>
+              </div>
+            </div>
+
+            <div class="server-details">
+              <div class="detail-item">
+                <span class="detail-label">Server ID:</span>
+                <span class="detail-value">{{ server.id }}</span>
+              </div>
+              
+              <div class="detail-item">
+                <span class="detail-label">Uptime:</span>
+                <span class="detail-value">{{ formatUptime(server.uptime) }}</span>
+              </div>
+              
+              <div class="detail-item">
+                <span class="detail-label">Last Health Check:</span>
+                <span class="detail-value">{{ formatDate(server.lastHealthCheck) }}</span>
+              </div>
+            </div>
+
+            <div class="server-actions">
+              @if (server.status === 'running') {
+                <button class="action-btn stop" title="Stop Server">
+                  <span>⏹️</span>
+                  Stop
+                </button>
+                <button class="action-btn restart" title="Restart Server">
+                  <span>🔄</span>
+                  Restart
+                </button>
+              } @else if (server.status === 'stopped') {
+                <button class="action-btn start" title="Start Server">
+                  <span>▶️</span>
+                  Start
+                </button>
+              }
+              
+              <button class="action-btn config" title="Configure Server">
+                <span>⚙️</span>
+                Config
+              </button>
+              
+              <button class="action-btn logs" title="View Logs">
+                <span>📋</span>
+                Logs
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

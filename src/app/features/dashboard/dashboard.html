@@ -1,0 +1,80 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h2>Dashboard</h2>
+    <button 
+      class="refresh-btn" 
+      (click)="refreshData()" 
+      [disabled]="isLoading()"
+      title="Refresh data">
+      <span [class.spinning]="isLoading()">🔄</span>
+      Refresh
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">
+      <span>⚠️</span>
+      <span>{{ error() }}</span>
+      <button (click)="refreshData()">Retry</button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading dashboard data...</p>
+    </div>
+  } @else {
+    <div class="stats-grid">
+      <div class="stat-card customers">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+          <h3>Customers</h3>
+          <div class="stat-number">{{ customerCount() }}</div>
+          <div class="stat-detail">{{ activeCustomers() }} active</div>
+        </div>
+      </div>
+
+      <div class="stat-card servers">
+        <div class="stat-icon">🖥️</div>
+        <div class="stat-content">
+          <h3>Servers</h3>
+          <div class="stat-number">{{ serverCount() }}</div>
+          <div class="stat-detail">{{ runningServers() }} running</div>
+        </div>
+      </div>
+
+      <div class="stat-card performance">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+          <h3>Performance</h3>
+          <div class="stat-number">{{ Math.round((runningServers() / serverCount()) * 100) || 0 }}%</div>
+          <div class="stat-detail">Uptime</div>
+        </div>
+      </div>
+
+      <div class="stat-card alerts">
+        <div class="stat-icon">🔔</div>
+        <div class="stat-content">
+          <h3>Alerts</h3>
+          <div class="stat-number">{{ serverCount() - runningServers() }}</div>
+          <div class="stat-detail">Issues</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <h3>Quick Actions</h3>
+      <div class="action-buttons">
+        <a routerLink="/customers" class="action-btn primary">
+          <span>👥</span>
+          Manage Customers
+        </a>
+        <a routerLink="/servers" class="action-btn secondary">
+          <span>🖥️</span>
+          Server Configuration
+        </a>
+      </div>
+    </div>
+  }
+</div>
