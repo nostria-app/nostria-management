@@ -1,0 +1,530 @@
+<div class="settings-management">
+  <div class="header">
+    <h1>Settings Management</h1>
+    <p>Manage user settings, subscription tiers, and release channels</p>
+  </div>
+
+  <!-- Get User Settings Section -->
+  <div class="section">
+    <h2>Load User Settings</h2>
+    <form [formGroup]="getUserSettingsForm" (ngSubmit)="loadUserSettings()" class="settings-form">
+      <div class="form-group">
+        <label for="getUserPubkey">Public Key</label>
+        <input
+          id="getUserPubkey"
+          type="text"
+          formControlName="pubkey"
+          class="form-control"
+          placeholder="Enter 64-character hex public key"
+          maxlength="64"
+        />
+        @if (getUserSettingsForm.get('pubkey')?.invalid && getUserSettingsForm.get('pubkey')?.touched) {
+          <span class="error-text">Please enter a valid 64-character hex public key</span>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          [disabled]="getUserSettingsForm.invalid || settingsLoading()"
+          class="btn-primary"
+        >
+          @if (settingsLoading()) {
+            Loading Settings...
+          } @else {
+            Load User Settings
+          }
+        </button>
+        
+        <button type="button" (click)="resetForm('getUser')" class="btn-secondary">
+          Clear
+        </button>
+      </div>
+    </form>
+
+    @if (settingsError()) {
+      <div class="error">
+        <span class="icon">❌</span>
+        {{ settingsError() }}
+      </div>
+    }
+
+    @if (currentSettings(); as settings) {
+      <div class="current-settings">
+        <h3>Current User Settings</h3>
+        <div class="settings-display">
+          <div class="settings-grid">
+            <div class="setting-item">
+              <label>Public Key:</label>
+              <div class="value-with-copy">
+                <code>{{ formatPubkey(settings.pubkey) }}</code>
+                <button (click)="copyToClipboard(settings.pubkey)" class="btn-copy" title="Copy to clipboard">
+                  📋
+                </button>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <label>Subscription Tier:</label>
+              <span class="tier-badge" [style.color]="getTierBadgeColor(settings.tier)">
+                {{ settings.tier | titlecase }}
+              </span>
+            </div>
+
+            <div class="setting-item">
+              <label>Release Channel:</label>
+              <span class="channel-badge" [style.color]="getChannelBadgeColor(settings.releaseChannel)">
+                {{ settings.releaseChannel | titlecase }}
+              </span>
+            </div>
+
+            @if (settings.displayName) {
+              <div class="setting-item">
+                <label>Display Name:</label>
+                <span>{{ settings.displayName }}</span>
+              </div>
+            }
+
+            @if (settings.bio) {
+              <div class="setting-item full-width">
+                <label>Bio:</label>
+                <p class="bio-text">{{ settings.bio }}</p>
+              </div>
+            }
+
+            @if (settings.picture) {
+              <div class="setting-item">
+                <label>Profile Picture:</label>
+                <a [href]="settings.picture" target="_blank" class="link">View Image</a>
+              </div>
+            }
+
+            @if (settings.banner) {
+              <div class="setting-item">
+                <label>Banner:</label>
+                <a [href]="settings.banner" target="_blank" class="link">View Image</a>
+              </div>
+            }
+
+            @if (settings.nip05) {
+              <div class="setting-item">
+                <label>NIP-05:</label>
+                <span>{{ settings.nip05 }}</span>
+              </div>
+            }
+
+            @if (settings.lud16) {
+              <div class="setting-item">
+                <label>Lightning Address:</label>
+                <span>{{ settings.lud16 }}</span>
+              </div>
+            }
+
+            @if (settings.website) {
+              <div class="setting-item">
+                <label>Website:</label>
+                <a [href]="settings.website" target="_blank" class="link">{{ settings.website }}</a>
+              </div>
+            }
+
+            <div class="setting-item">
+              <label>Created:</label>
+              <span>{{ formatDate(settings.created) }}</span>
+            </div>
+
+            <div class="setting-item">
+              <label>Updated:</label>
+              <span>{{ formatDate(settings.updated) }}</span>
+            </div>
+          </div>
+
+          <div class="settings-actions">
+            <button (click)="exportSettings()" class="btn-secondary">Export Settings</button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Update User Settings Section -->
+  <div class="section">
+    <h2>Update User Settings</h2>
+    <form [formGroup]="settingsForm" (ngSubmit)="updateUserSettings()" class="settings-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="pubkey">Public Key</label>
+          <input
+            id="pubkey"
+            type="text"
+            formControlName="pubkey"
+            class="form-control"
+            placeholder="Enter 64-character hex public key"
+            maxlength="64"
+          />
+          @if (settingsForm.get('pubkey')?.invalid && settingsForm.get('pubkey')?.touched) {
+            <span class="error-text">Please enter a valid 64-character hex public key</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="tier">Subscription Tier</label>
+          <select id="tier" formControlName="tier" class="form-control">
+            @for (tier of tierOptions; track tier.value) {
+              <option [value]="tier.value">{{ tier.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="displayName">Display Name</label>
+          <input
+            id="displayName"
+            type="text"
+            formControlName="displayName"
+            class="form-control"
+            placeholder="Optional display name"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="nip05">NIP-05 Identifier</label>
+          <input
+            id="nip05"
+            type="email"
+            formControlName="nip05"
+            class="form-control"
+            placeholder="user@domain.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lud16">Lightning Address</label>
+          <input
+            id="lud16"
+            type="email"
+            formControlName="lud16"
+            class="form-control"
+            placeholder="user@domain.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="website">Website</label>
+          <input
+            id="website"
+            type="url"
+            formControlName="website"
+            class="form-control"
+            placeholder="https://example.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="picture">Profile Picture URL</label>
+          <input
+            id="picture"
+            type="url"
+            formControlName="picture"
+            class="form-control"
+            placeholder="https://example.com/avatar.jpg"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="banner">Banner Image URL</label>
+          <input
+            id="banner"
+            type="url"
+            formControlName="banner"
+            class="form-control"
+            placeholder="https://example.com/banner.jpg"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="bio">Biography</label>
+          <textarea
+            id="bio"
+            formControlName="bio"
+            class="form-control"
+            placeholder="Tell us about yourself..."
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          [disabled]="settingsForm.invalid || isUpdatingSettings()"
+          class="btn-primary"
+        >
+          @if (isUpdatingSettings()) {
+            Updating Settings...
+          } @else {
+            Update Settings
+          }
+        </button>
+        
+        <button type="button" (click)="resetForm('settings')" class="btn-secondary">
+          Reset Form
+        </button>
+
+        @if (updateSettingsSuccess() || updateSettingsError()) {
+          <button type="button" (click)="clearResults()" class="btn-secondary">
+            Clear Results
+          </button>
+        }
+      </div>
+    </form>
+
+    @if (updateSettingsError()) {
+      <div class="error">
+        <span class="icon">❌</span>
+        {{ updateSettingsError() }}
+      </div>
+    }
+
+    @if (updateSettingsSuccess()) {
+      <div class="success">
+        <span class="icon">✅</span>
+        User settings updated successfully!
+      </div>
+    }
+  </div>
+
+  <!-- Admin Settings Section -->
+  <div class="section admin-section">
+    <h2>Admin: Update User Settings</h2>
+    <p class="admin-warning">⚠️ Admin-only function. Use with caution.</p>
+    
+    <form [formGroup]="adminSettingsForm" (ngSubmit)="adminUpdateUserSettings()" class="settings-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="adminPubkey">Admin Public Key</label>
+          <input
+            id="adminPubkey"
+            type="text"
+            formControlName="pubkey"
+            class="form-control"
+            placeholder="Enter admin public key"
+            maxlength="64"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="targetPubkey">Target User Public Key</label>
+          <input
+            id="targetPubkey"
+            type="text"
+            formControlName="targetPubkey"
+            class="form-control"
+            placeholder="Enter target user public key"
+            maxlength="64"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="adminTier">Set Tier</label>
+          <select id="adminTier" formControlName="tier" class="form-control">
+            @for (tier of tierOptions; track tier.value) {
+              <option [value]="tier.value">{{ tier.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="adminDisplayName">Display Name</label>
+          <input
+            id="adminDisplayName"
+            type="text"
+            formControlName="displayName"
+            class="form-control"
+            placeholder="Optional display name"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="adminNip05">NIP-05 Identifier</label>
+          <input
+            id="adminNip05"
+            type="email"
+            formControlName="nip05"
+            class="form-control"
+            placeholder="user@domain.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="adminLud16">Lightning Address</label>
+          <input
+            id="adminLud16"
+            type="email"
+            formControlName="lud16"
+            class="form-control"
+            placeholder="user@domain.com"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="adminBio">Biography</label>
+          <textarea
+            id="adminBio"
+            formControlName="bio"
+            class="form-control"
+            placeholder="User biography..."
+            rows="2"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          [disabled]="adminSettingsForm.invalid || isAdminOperation()"
+          class="btn-danger"
+        >
+          @if (isAdminOperation()) {
+            Updating User Settings...
+          } @else {
+            Admin Update Settings
+          }
+        </button>
+        
+        <button type="button" (click)="resetForm('admin')" class="btn-secondary">
+          Reset Form
+        </button>
+      </div>
+    </form>
+
+    @if (adminError()) {
+      <div class="error">
+        <span class="icon">❌</span>
+        {{ adminError() }}
+      </div>
+    }
+
+    @if (adminSuccess()) {
+      <div class="success">
+        <span class="icon">✅</span>
+        User settings updated successfully via admin function!
+      </div>
+    }
+  </div>
+
+  <!-- Release Channel Management Section -->
+  <div class="section">
+    <h2>Release Channel Management</h2>
+    
+    <div class="subsection">
+      <h3>Current Release Channels</h3>
+      @if (channelsLoading()) {
+        <div class="loading">Loading release channels...</div>
+      } @else if (channelsError()) {
+        <div class="error">
+          <span class="icon">⚠️</span>
+          {{ channelsError() }}
+          <button class="btn-secondary" (click)="loadReleaseChannels()">Retry</button>
+        </div>
+      } @else if (releaseChannels().length === 0) {
+        <div class="empty-state">
+          <span class="icon">📊</span>
+          <p>No release channel data available</p>
+        </div>
+      } @else {
+        <div class="channels-grid">
+          @for (channel of releaseChannels(); track channel.channel) {
+            <div class="channel-card">
+              <div class="channel-header">
+                <span class="channel-name" [style.color]="getChannelBadgeColor(channel.channel)">
+                  {{ channel.channel | titlecase }}
+                </span>
+                <span class="user-count">{{ channel.userCount }} users</span>
+              </div>
+              <div class="channel-users">
+                @if (channel.users.length > 0) {
+                  <p>Sample users:</p>
+                  <div class="user-list">
+                    @for (user of channel.users.slice(0, 3); track user) {
+                      <code class="user-pubkey">{{ formatPubkey(user) }}</code>
+                    }
+                    @if (channel.users.length > 3) {
+                      <span class="more-users">+{{ channel.users.length - 3 }} more</span>
+                    }
+                  </div>
+                } @else {
+                  <p class="no-users">No users in this channel</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="channels-actions">
+          <button (click)="loadReleaseChannels()" class="btn-secondary">Refresh</button>
+          <button (click)="exportReleaseChannels()" class="btn-secondary">Export</button>
+        </div>
+      }
+    </div>
+
+    <div class="subsection">
+      <h3>Update User Release Channel</h3>
+      <form [formGroup]="releaseChannelForm" (ngSubmit)="updateReleaseChannel()" class="settings-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="channelPubkey">Public Key</label>
+            <input
+              id="channelPubkey"
+              type="text"
+              formControlName="pubkey"
+              class="form-control"
+              placeholder="Enter user public key"
+              maxlength="64"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="releaseChannel">Release Channel</label>
+            <select id="releaseChannel" formControlName="releaseChannel" class="form-control">
+              @for (channel of channelOptions; track channel.value) {
+                <option [value]="channel.value">{{ channel.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            [disabled]="releaseChannelForm.invalid || isUpdatingChannel()"
+            class="btn-primary"
+          >
+            @if (isUpdatingChannel()) {
+              Updating Channel...
+            } @else {
+              Update Release Channel
+            }
+          </button>
+          
+          <button type="button" (click)="resetForm('channel')" class="btn-secondary">
+            Reset Form
+          </button>
+        </div>
+      </form>
+
+      @if (updateChannelError()) {
+        <div class="error">
+          <span class="icon">❌</span>
+          {{ updateChannelError() }}
+        </div>
+      }
+
+      @if (updateChannelSuccess()) {
+        <div class="success">
+          <span class="icon">✅</span>
+          Release channel updated successfully!
+        </div>
+      }
+    </div>
+  </div>
+</div>

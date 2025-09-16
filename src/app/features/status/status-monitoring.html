@@ -1,0 +1,273 @@
+<div class="status-monitoring">
+  <div class="header">
+    <h1>System Status & Monitoring</h1>
+    <p>Monitor service health, performance metrics, and endpoint status</p>
+  </div>
+
+  <!-- Overall Status Banner -->
+  <div class="overall-status" [style.border-color]="getOverallStatus().color">
+    <div class="status-content">
+      <div class="status-indicator">
+        <span class="status-icon">{{ getOverallStatus().icon }}</span>
+        <span class="status-text" [style.color]="getOverallStatus().color">
+          {{ getOverallStatus().status }}
+        </span>
+      </div>
+      
+      @if (lastUpdated()) {
+        <div class="last-updated">
+          Last updated: {{ formatDate(lastUpdated()!) }}
+        </div>
+      }
+      
+      <div class="status-actions">
+        <button (click)="refreshAll()" class="btn-primary" [disabled]="statusLoading() || healthLoading()">
+          @if (statusLoading() || healthLoading()) {
+            Refreshing...
+          } @else {
+            Refresh All
+          }
+        </button>
+        
+        <button 
+          (click)="toggleAutoRefresh()" 
+          [class]="autoRefresh() ? 'btn-primary' : 'btn-secondary'"
+        >
+          @if (autoRefresh()) {
+            Stop Auto-refresh
+          } @else {
+            Start Auto-refresh
+          }
+        </button>
+        
+        <button (click)="exportStatus()" class="btn-secondary">
+          Export Status
+        </button>
+      </div>
+    </div>
+
+    @if (autoRefresh()) {
+      <div class="auto-refresh-controls">
+        <label>Refresh interval:</label>
+        <div class="interval-buttons">
+          @for (interval of [10, 30, 60, 120]; track interval) {
+            <button
+              (click)="setRefreshInterval(interval)"
+              [class]="refreshIntervalSeconds() === interval ? 'btn-primary' : 'btn-secondary'"
+              class="interval-btn"
+            >
+              {{ interval }}s
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Service Status Section -->
+  <div class="section">
+    <h2>Service Information</h2>
+    
+    @if (statusLoading()) {
+      <div class="loading">Loading service status...</div>
+    } @else if (statusError()) {
+      <div class="error">
+        <span class="icon">⚠️</span>
+        {{ statusError() }}
+        <button class="btn-secondary" (click)="loadServiceStatus()">Retry</button>
+      </div>
+    } @else if (serviceStatus(); as status) {
+      <div class="service-info">
+        <div class="info-grid">
+          <div class="info-card">
+            <h3>Service Details</h3>
+            <div class="info-content">
+              <div class="info-row">
+                <label>Service:</label>
+                <span>{{ status.service }}</span>
+              </div>
+              <div class="info-row">
+                <label>Version:</label>
+                <code>{{ status.version }}</code>
+              </div>
+              <div class="info-row">
+                <label>Environment:</label>
+                <span class="env-badge" [class]="status.environment">
+                  {{ status.environment | titlecase }}
+                </span>
+              </div>
+              <div class="info-row">
+                <label>Uptime:</label>
+                <span>{{ formatUptime(status.uptime) }}</span>
+              </div>
+              <div class="info-row">
+                <label>Key:</label>
+                <code>{{ status.key.slice(0, 16) }}...</code>
+              </div>
+              <div class="info-row">
+                <label>Timestamp:</label>
+                <span>{{ formatDate(status.timestamp) }}</span>
+              </div>
+            </div>
+          </div>
+
+          @if (status.system) {
+            <div class="info-card">
+              <h3>System Information</h3>
+              <div class="info-content">
+                <div class="info-row">
+                  <label>Platform:</label>
+                  <span>{{ status.system.platform }}</span>
+                </div>
+                <div class="info-row">
+                  <label>Architecture:</label>
+                  <span>{{ status.system.arch }}</span>
+                </div>
+                <div class="info-row">
+                  <label>Memory Total:</label>
+                  <span>{{ formatBytes(status.system.memory.total) }}</span>
+                </div>
+                <div class="info-row">
+                  <label>Memory Free:</label>
+                  <span>{{ formatBytes(status.system.memory.free) }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Health Status Section -->
+  <div class="section">
+    <h2>Health Check</h2>
+    
+    @if (healthLoading()) {
+      <div class="loading">Checking health status...</div>
+    } @else if (healthError()) {
+      <div class="error">
+        <span class="icon">⚠️</span>
+        {{ healthError() }}
+        <button class="btn-secondary" (click)="loadHealthStatus()">Retry</button>
+      </div>
+    } @else if (healthStatus(); as health) {
+      <div class="health-status">
+        <div class="health-indicator">
+          <span class="status-icon">{{ getStatusIcon(health.status) }}</span>
+          <span class="status-text" [style.color]="getStatusColor(health.status)">
+            {{ health.status | titlecase }}
+          </span>
+        </div>
+        <p>All core services are operational and responding normally.</p>
+      </div>
+    }
+  </div>
+
+  <!-- System Metrics Section -->
+  <div class="section">
+    <h2>System Metrics</h2>
+    
+    <div class="metrics-grid">
+      @for (metric of [
+        { key: 'cpu', label: 'CPU Usage', unit: '%' },
+        { key: 'memory', label: 'Memory Usage', unit: '%' },
+        { key: 'disk', label: 'Disk Usage', unit: '%' },
+        { key: 'network', label: 'Network I/O', unit: '%' }
+      ]; track metric.key) {
+        <div class="metric-card">
+          <div class="metric-header">
+            <h3>{{ metric.label }}</h3>
+            <span class="metric-value" [style.color]="getMetricColor(getSystemMetricValue(metric.key), metric.key)">
+              {{ getSystemMetricValue(metric.key).toFixed(1) }}{{ metric.unit }}
+            </span>
+          </div>
+          <div class="metric-bar">
+            <div 
+              class="metric-fill" 
+              [style.width.%]="getSystemMetricValue(metric.key)"
+              [style.background-color]="getMetricColor(getSystemMetricValue(metric.key), metric.key)"
+            ></div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Endpoint Status Section -->
+  <div class="section">
+    <div class="section-header">
+      <h2>API Endpoint Status</h2>
+      <button (click)="refreshEndpointStatus()" class="btn-secondary">
+        Refresh Endpoints
+      </button>
+    </div>
+    
+    <div class="endpoints-grid">
+      @for (endpoint of endpointStatus(); track endpoint.endpoint) {
+        <div class="endpoint-card" [class]="endpoint.status">
+          <div class="endpoint-header">
+            <div class="endpoint-info">
+              <code class="endpoint-path">{{ endpoint.endpoint }}</code>
+              <span class="endpoint-status" [style.color]="getStatusColor(endpoint.status)">
+                {{ getStatusIcon(endpoint.status) }} {{ endpoint.status | titlecase }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="endpoint-metrics">
+            <div class="metric-item">
+              <label>Response Time:</label>
+              <span [style.color]="getResponseTimeColor(endpoint.responseTime)">
+                {{ endpoint.responseTime }}ms
+              </span>
+            </div>
+            <div class="metric-item">
+              <label>Last Check:</label>
+              <span>{{ formatDate(endpoint.lastCheck) }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Performance Summary Section -->
+  <div class="section">
+    <h2>Performance Summary</h2>
+    
+    <div class="summary-grid">
+      <div class="summary-card">
+        <h3>Average Response Time</h3>
+        <div class="summary-value">
+          {{ getAverageResponseTime() }}ms
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <h3>Healthy Endpoints</h3>
+        <div class="summary-value" [style.color]="getStatusColor('ok')">
+          {{ getHealthyEndpointsCount() }} / {{ getTotalEndpointsCount() }}
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <h3>System Load</h3>
+        <div class="summary-value" [style.color]="getMetricColor((getSystemMetricValue('cpu') + getSystemMetricValue('memory')) / 2, 'cpu')">
+          {{ ((getSystemMetricValue('cpu') + getSystemMetricValue('memory')) / 2).toFixed(1) }}%
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <h3>Service Uptime</h3>
+        <div class="summary-value">
+          @if (serviceStatus()) {
+            {{ formatUptime(serviceStatus()!.uptime) }}
+          } @else {
+            N/A
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

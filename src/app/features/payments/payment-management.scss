@@ -1,0 +1,579 @@
+.payment-management {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .header {
+    margin-bottom: 3rem;
+    text-align: center;
+
+    h1 {
+      color: #1a1a1a;
+      margin-bottom: 0.5rem;
+      font-size: 2.5rem;
+      font-weight: 600;
+    }
+
+    p {
+      color: #666;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+  }
+
+  .section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+
+    h2 {
+      color: #1a1a1a;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+
+      h2 {
+        margin-bottom: 0;
+      }
+
+      .section-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+    }
+  }
+
+  // Tier Cards
+  .tiers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .tier-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+
+    &.selected {
+      border-color: #3b82f6;
+      background: #f8faff;
+    }
+
+    h3 {
+      color: #1a1a1a;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .tier-details {
+      .description {
+        color: #666;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+      }
+
+      .pricing {
+        .price-option {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.5rem 0;
+          border-bottom: 1px solid #f3f4f6;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          .cycle {
+            font-weight: 500;
+            color: #374151;
+          }
+
+          .price {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 1.1rem;
+          }
+
+          .discount {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+  }
+
+  // Forms
+  .payment-form {
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+
+      .full-width {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .form-group {
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+
+        &:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        &:invalid {
+          border-color: #ef4444;
+        }
+      }
+
+      .error-text {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: block;
+      }
+    }
+
+    .price-summary {
+      background: #f8faff;
+      border: 2px solid #e0e7ff;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+
+      .price-display {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1.25rem;
+
+        .original-price {
+          text-decoration: line-through;
+          color: #9ca3af;
+          font-weight: 500;
+        }
+
+        .final-price {
+          font-weight: 700;
+          color: #1a1a1a;
+          font-size: 1.5rem;
+        }
+
+        .savings {
+          background: #dcfce7;
+          color: #166534;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 1rem;
+        }
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  }
+
+  // Payment Details
+  .payment-details {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e5e7eb;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      label {
+        font-weight: 500;
+        color: #374151;
+        min-width: 120px;
+      }
+
+      .value-with-copy {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        justify-content: flex-end;
+
+        code {
+          background: #f3f4f6;
+          padding: 0.5rem;
+          border-radius: 6px;
+          font-size: 0.875rem;
+          max-width: 300px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .lightning-invoice {
+          max-width: 200px;
+        }
+      }
+
+      .expired {
+        color: #ef4444;
+        font-weight: 500;
+      }
+    }
+  }
+
+  // Payment History
+  .payment-history {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .payment-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+
+    &.paid {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    &.pending {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+
+    &.expired {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    .payment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+
+      .payment-id {
+        label {
+          font-weight: 500;
+          color: #374151;
+          margin-bottom: 0.25rem;
+          display: block;
+        }
+
+        code {
+          background: #f3f4f6;
+          padding: 0.5rem;
+          border-radius: 6px;
+          font-size: 0.875rem;
+        }
+      }
+    }
+
+    .payment-body {
+      margin-bottom: 1rem;
+
+      .invoice-section, .expiry-section {
+        margin-bottom: 1rem;
+
+        label {
+          font-weight: 500;
+          color: #374151;
+          margin-bottom: 0.5rem;
+          display: block;
+        }
+
+        .invoice-display {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          code {
+            background: #f3f4f6;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            flex: 1;
+          }
+
+          .invoice-actions {
+            display: flex;
+            gap: 0.5rem;
+          }
+        }
+
+        .countdown {
+          color: #f59e0b;
+          font-weight: 500;
+          margin-left: 0.5rem;
+        }
+      }
+    }
+
+    .payment-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+  }
+
+  // Status badges
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    background: rgba(156, 163, 175, 0.1);
+    color: #374151;
+
+    &[style*="rgb(16, 185, 129)"] {
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    &[style*="rgb(245, 158, 11)"] {
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    &[style*="rgb(239, 68, 68)"] {
+      background: rgba(239, 68, 68, 0.1);
+    }
+  }
+
+  // Buttons
+  .btn-primary, .btn-secondary, .btn-copy {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+  }
+
+  .btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+
+    &:hover:not(:disabled) {
+      background: #e5e7eb;
+      transform: translateY(-1px);
+    }
+  }
+
+  .btn-copy {
+    padding: 0.5rem;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    min-width: auto;
+
+    &:hover:not(:disabled) {
+      background: #e5e7eb;
+    }
+  }
+
+  // Status states
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+
+    .icon {
+      font-size: 1.2rem;
+    }
+
+    .btn-secondary {
+      margin-left: auto;
+    }
+  }
+
+  .success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+
+    h3 {
+      color: #166534;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+  }
+
+  .payment-status-result {
+    background: #f8faff;
+    border: 1px solid #e0e7ff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+
+    h3 {
+      color: #1e40af;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+
+    .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: 1rem;
+
+    .header h1 {
+      font-size: 2rem;
+    }
+
+    .section {
+      padding: 1.5rem;
+    }
+
+    .tiers-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .payment-form .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .payment-card .payment-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .detail-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+
+      .value-with-copy {
+        justify-content: flex-start;
+        width: 100%;
+
+        code {
+          max-width: 100%;
+        }
+      }
+    }
+
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .price-display {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+  }
+}

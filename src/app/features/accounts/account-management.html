@@ -1,0 +1,213 @@
+<div class="account-management">
+  <h1>Account Management</h1>
+  
+  <!-- Subscription Tiers Section -->
+  <section class="tiers-section">
+    <h2>Subscription Tiers</h2>
+    <div class="tiers-grid">
+      @for (tier of tiersArray(); track tier.tier) {
+        <div class="tier-card" [class.premium]="tier.tier !== 'free'">
+          <h3>{{ tier.name }}</h3>
+          <div class="tier-info">
+            <span class="tier-type">{{ tier.tier }}</span>
+            <div class="pricing">
+              @if (tier.pricing.monthly) {
+                <div class="price">
+                  <span class="amount">${{ formatPrice(tier.pricing.monthly.priceCents) }}</span>
+                  <span class="period">/month</span>
+                </div>
+              }
+              @if (tier.pricing.yearly) {
+                <div class="price annual">
+                  <span class="amount">${{ formatPrice(tier.pricing.yearly.priceCents) }}</span>
+                  <span class="period">/year</span>
+                </div>
+              }
+            </div>
+            <div class="features">
+              <p><strong>Notifications per day:</strong> {{ tier.entitlements.notificationsPerDay }}</p>
+              <div class="feature-list">
+                @for (feature of tier.entitlements.features; track feature.key) {
+                  <span class="feature-tag">{{ feature.label }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    @if (tiersLoading()) {
+      <div class="loading">Loading subscription tiers...</div>
+    }
+    @if (tiersError()) {
+      <div class="error">Error loading tiers: {{ tiersError() }}</div>
+    }
+  </section>
+
+  <!-- Account Creation Section -->
+  <section class="account-creation">
+    <h2>Create Account</h2>
+    <form [formGroup]="createAccountForm" (ngSubmit)="createAccount()">
+      <div class="form-group">
+        <label for="pubkey">Public Key *</label>
+        <input 
+          id="pubkey" 
+          type="text" 
+          formControlName="pubkey"
+          placeholder="Enter public key in hex format"
+          maxlength="64"
+        >
+        @if (createAccountForm.get('pubkey')?.errors?.['required'] && createAccountForm.get('pubkey')?.touched) {
+          <div class="error">Public key is required</div>
+        }
+        @if (createAccountForm.get('pubkey')?.errors?.['pattern'] && createAccountForm.get('pubkey')?.touched) {
+          <div class="error">Invalid public key format (must be 64 hex characters)</div>
+        }
+      </div>
+      
+      <div class="form-group">
+        <label for="username">Username (optional)</label>
+        <input 
+          id="username" 
+          type="text" 
+          formControlName="username"
+          placeholder="Choose a username"
+        >
+        <button type="button" class="check-btn" (click)="checkUsername()" [disabled]="!createAccountForm.get('username')?.value">
+          Check Availability
+        </button>
+      </div>
+      
+      <div class="form-group">
+        <label for="paymentId">Payment ID (optional)</label>
+        <input 
+          id="paymentId" 
+          type="text" 
+          formControlName="paymentId"
+          placeholder="Payment ID for premium subscription"
+        >
+      </div>
+      
+      <button type="submit" [disabled]="createAccountForm.invalid || isCreatingAccount()" class="primary-btn">
+        @if (isCreatingAccount()) {
+          Creating...
+        } @else {
+          Create Account
+        }
+      </button>
+    </form>
+    
+    @if (createAccountError()) {
+      <div class="error">{{ createAccountError() }}</div>
+    }
+    @if (createAccountSuccess()) {
+      <div class="success">Account created successfully!</div>
+    }
+  </section>
+
+  <!-- Username Check Results -->
+  @if (usernameCheckResult()) {
+    <section class="username-check">
+      <h3>Username Check Result</h3>
+      <div [class]="usernameCheckResult()?.success ? 'success' : 'error'">
+        {{ usernameCheckResult()?.message || 'Username check completed' }}
+      </div>
+    </section>
+  }
+
+  <!-- Account Lookup Section -->
+  <section class="account-lookup">
+    <h2>Account Lookup</h2>
+    <div class="lookup-form">
+      <input 
+        type="text" 
+        [(ngModel)]="lookupQuery"
+        placeholder="Enter public key or username"
+        class="lookup-input"
+      >
+      <button (click)="lookupAccount()" [disabled]="!lookupQuery || isLookingUp()" class="secondary-btn">
+        @if (isLookingUp()) {
+          Looking up...
+        } @else {
+          Lookup Account
+        }
+      </button>
+    </div>
+    
+    @if (lookupResult()) {
+      <div class="account-result">
+        <h3>Account Information</h3>
+        <div class="account-details">
+          <p><strong>Public Key:</strong> {{ lookupResult()?.pubkey }}</p>
+          @if (lookupResult()?.username) {
+            <p><strong>Username:</strong> {{ lookupResult()?.username }}</p>
+          }
+          <p><strong>Tier:</strong> {{ lookupResult()?.tier }}</p>
+          <p><strong>Active:</strong> {{ lookupResult()?.isActive ? 'Yes' : 'No' }}</p>
+          <p><strong>Signup Date:</strong> {{ formatDate(lookupResult()?.signupDate) }}</p>
+        </div>
+      </div>
+    }
+    
+    @if (lookupError()) {
+      <div class="error">{{ lookupError() }}</div>
+    }
+  </section>
+
+  <!-- Current Account Section (if authenticated) -->
+  @if (currentAccount()) {
+    <section class="current-account">
+      <h2>Current Account</h2>
+      <div class="account-info">
+        <p><strong>Public Key:</strong> {{ currentAccount()?.pubkey }}</p>
+        @if (currentAccount()?.username) {
+          <p><strong>Username:</strong> {{ currentAccount()?.username }}</p>
+        }
+        <p><strong>Tier:</strong> {{ currentAccount()?.tier }}</p>
+        <p><strong>Signup Date:</strong> {{ formatDate(currentAccount()?.signupDate) }}</p>
+        @if (currentAccount()?.lastLoginDate) {
+          <p><strong>Last Login:</strong> {{ formatDate(currentAccount()?.lastLoginDate) }}</p>
+        }
+        @if (currentAccount()?.expires) {
+          <p><strong>Expires:</strong> {{ formatDate(currentAccount()?.expires) }}</p>
+        }
+        <div class="entitlements">
+          <h4>Entitlements</h4>
+          <p>Notifications per day: {{ currentAccount()?.entitlements?.notificationsPerDay }}</p>
+          <div class="features">
+            @for (feature of currentAccount()?.entitlements?.features; track feature.key) {
+              <span class="feature-tag">{{ feature.label }}</span>
+            }
+          </div>
+        </div>
+      </div>
+      
+      <form [formGroup]="updateAccountForm" (ngSubmit)="updateAccount()">
+        <h3>Update Account</h3>
+        <div class="form-group">
+          <label for="updateUsername">Username</label>
+          <input 
+            id="updateUsername" 
+            type="text" 
+            formControlName="username"
+            placeholder="Enter new username"
+          >
+        </div>
+        <button type="submit" [disabled]="updateAccountForm.invalid || isUpdatingAccount()" class="primary-btn">
+          @if (isUpdatingAccount()) {
+            Updating...
+          } @else {
+            Update Account
+          }
+        </button>
+      </form>
+      
+      @if (updateAccountError()) {
+        <div class="error">{{ updateAccountError() }}</div>
+      }
+      @if (updateAccountSuccess()) {
+        <div class="success">Account updated successfully!</div>
+      }
+    </section>
+  }
+</div>

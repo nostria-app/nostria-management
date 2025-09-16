@@ -1,0 +1,346 @@
+<div class="payment-management">
+  <div class="header">
+    <h1>Payment Management</h1>
+    <p>Create Lightning invoices and manage subscription payments</p>
+  </div>
+
+  <!-- Tier Information -->
+  <div class="section">
+    <h2>Available Subscription Tiers</h2>
+    @if (tiersLoading()) {
+      <div class="loading">Loading tier information...</div>
+    } @else if (tiersError()) {
+      <div class="error">
+        <span class="icon">⚠️</span>
+        {{ tiersError() }}
+        <button class="btn-secondary" (click)="loadTiers()">Retry</button>
+      </div>
+    } @else if (tiers()) {
+      <div class="tiers-grid">
+        @for (tier of tierOptions; track tier.value) {
+          <div class="tier-card" [class.selected]="createPaymentForm.get('tierName')?.value === tier.value">
+            @if (tiers()![tier.value]) {
+              <h3>{{ tier.label }}</h3>
+              <div class="tier-details">
+                <p class="description">{{ tiers()![tier.value].name || 'Subscription tier' }}</p>
+                @if (tiers()![tier.value].pricing) {
+                  <div class="pricing">
+                    @if (tiers()![tier.value].pricing!.monthly) {
+                      <div class="price-option">
+                        <span class="cycle">Monthly:</span>
+                        <span class="price">${{ tiers()![tier.value].pricing!.monthly!.priceCents / 100 }}</span>
+                      </div>
+                    }
+                    @if (tiers()![tier.value].pricing!.quarterly) {
+                      <div class="price-option">
+                        <span class="cycle">Quarterly:</span>
+                        <span class="price">${{ tiers()![tier.value].pricing!.quarterly!.priceCents / 100 }}</span>
+                        <span class="discount">5% off</span>
+                      </div>
+                    }
+                    @if (tiers()![tier.value].pricing!.yearly) {
+                      <div class="price-option">
+                        <span class="cycle">Yearly:</span>
+                        <span class="price">${{ tiers()![tier.value].pricing!.yearly!.priceCents / 100 }}</span>
+                        <span class="discount">15% off</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Create Payment Section -->
+  <div class="section">
+    <h2>Create Lightning Invoice</h2>
+    <form [formGroup]="createPaymentForm" (ngSubmit)="createPayment()" class="payment-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="tierName">Subscription Tier</label>
+          <select id="tierName" formControlName="tierName" class="form-control">
+            @for (tier of tierOptions; track tier.value) {
+              <option [value]="tier.value">{{ tier.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="billingCycle">Billing Cycle</label>
+          <select id="billingCycle" formControlName="billingCycle" class="form-control">
+            @for (cycle of billingCycleOptions; track cycle.value) {
+              <option [value]="cycle.value">
+                {{ cycle.label }}
+                @if (cycle.discount) {
+                  ({{ cycle.discount }})
+                }
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="pubkey">Public Key</label>
+          <input
+            id="pubkey"
+            type="text"
+            formControlName="pubkey"
+            class="form-control"
+            placeholder="Enter your 64-character hex public key"
+            maxlength="64"
+          />
+          @if (createPaymentForm.get('pubkey')?.invalid && createPaymentForm.get('pubkey')?.touched) {
+            <span class="error-text">Please enter a valid 64-character hex public key</span>
+          }
+        </div>
+      </div>
+
+      <!-- Price Calculation -->
+      @if (getCalculatedPrice(); as price) {
+        <div class="price-summary">
+          <div class="price-display">
+            @if (price.originalAmount && price.originalAmount !== price.amount) {
+              <span class="original-price">${{ price.originalAmount.toFixed(2) }}</span>
+            }
+            <span class="final-price">${{ price.amount.toFixed(2) }} {{ price.currency.toUpperCase() }}</span>
+            @if (price.originalAmount && price.originalAmount !== price.amount) {
+              <span class="savings">Save ${{ (price.originalAmount - price.amount).toFixed(2) }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          [disabled]="createPaymentForm.invalid || isCreatingPayment()"
+          class="btn-primary"
+        >
+          @if (isCreatingPayment()) {
+            Creating Invoice...
+          } @else {
+            Create Lightning Invoice
+          }
+        </button>
+        
+        @if (createdPayment() || createPaymentError()) {
+          <button type="button" (click)="clearResults()" class="btn-secondary">
+            Clear Results
+          </button>
+        }
+      </div>
+    </form>
+
+    <!-- Create Payment Results -->
+    @if (createPaymentError()) {
+      <div class="error">
+        <span class="icon">❌</span>
+        {{ createPaymentError() }}
+      </div>
+    }
+
+    @if (createdPayment(); as payment) {
+      <div class="success">
+        <h3>Lightning Invoice Created Successfully!</h3>
+        <div class="payment-details">
+          <div class="detail-row">
+            <label>Payment ID:</label>
+            <div class="value-with-copy">
+              <code>{{ payment.id }}</code>
+              <button (click)="copyToClipboard(payment.id)" class="btn-copy" title="Copy to clipboard">
+                📋
+              </button>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <label>Lightning Invoice:</label>
+            <div class="value-with-copy">
+              <code class="lightning-invoice">{{ payment.lnInvoice.slice(0, 50) }}...</code>
+              <button (click)="copyToClipboard(payment.lnInvoice)" class="btn-copy" title="Copy to clipboard">
+                📋
+              </button>
+              <button (click)="openLightningInvoice(payment.lnInvoice)" class="btn-secondary">
+                Open in Wallet
+              </button>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <label>Status:</label>
+            <span class="status-badge" [style.color]="getStatusColor(payment.status)">
+              {{ getStatusIcon(payment.status) }} {{ payment.status | titlecase }}
+            </span>
+          </div>
+          
+          @if (payment.expires) {
+            <div class="detail-row">
+              <label>Expires:</label>
+              <span [class.expired]="isExpired(payment.expires)">
+                {{ formatDate(payment.expires) }}
+                @if (!isExpired(payment.expires)) {
+                  ({{ getTimeUntilExpiration(payment.expires) }})
+                }
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Check Payment Status Section -->
+  <div class="section">
+    <h2>Check Payment Status</h2>
+    <form [formGroup]="checkPaymentForm" (ngSubmit)="checkPayment()" class="payment-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="checkPubkey">Public Key</label>
+          <input
+            id="checkPubkey"
+            type="text"
+            formControlName="pubkey"
+            class="form-control"
+            placeholder="Enter public key"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="paymentId">Payment ID</label>
+          <input
+            id="paymentId"
+            type="text"
+            formControlName="paymentId"
+            class="form-control"
+            placeholder="Enter payment ID"
+          />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          [disabled]="checkPaymentForm.invalid || isCheckingPayment()"
+          class="btn-primary"
+        >
+          @if (isCheckingPayment()) {
+            Checking Status...
+          } @else {
+            Check Payment Status
+          }
+        </button>
+      </div>
+    </form>
+
+    <!-- Check Payment Results -->
+    @if (paymentCheckError()) {
+      <div class="error">
+        <span class="icon">❌</span>
+        {{ paymentCheckError() }}
+      </div>
+    }
+
+    @if (checkedPayment(); as payment) {
+      <div class="payment-status-result">
+        <h3>Payment Status</h3>
+        <div class="payment-details">
+          <div class="detail-row">
+            <label>Payment ID:</label>
+            <code>{{ payment.id }}</code>
+          </div>
+          
+          <div class="detail-row">
+            <label>Status:</label>
+            <span class="status-badge" [style.color]="getStatusColor(payment.status)">
+              {{ getStatusIcon(payment.status) }} {{ payment.status | titlecase }}
+            </span>
+          </div>
+          
+          @if (payment.expires) {
+            <div class="detail-row">
+              <label>Expires:</label>
+              <span [class.expired]="isExpired(payment.expires)">
+                {{ formatDate(payment.expires) }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Payment History Section -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Payment History</h2>
+      <div class="section-actions">
+        <button (click)="loadPaymentHistory()" class="btn-secondary">Refresh</button>
+        <button (click)="exportPaymentHistory()" class="btn-secondary">Export</button>
+      </div>
+    </div>
+
+    @if (paymentHistory().length === 0) {
+      <div class="empty-state">
+        <span class="icon">💳</span>
+        <p>No payment history available</p>
+      </div>
+    } @else {
+      <div class="payment-history">
+        @for (payment of paymentHistory(); track payment.id) {
+          <div class="payment-card" [class]="payment.status">
+            <div class="payment-header">
+              <div class="payment-id">
+                <label>Payment ID:</label>
+                <code>{{ payment.id }}</code>
+              </div>
+              <div class="payment-status">
+                <span class="status-badge" [style.color]="getStatusColor(payment.status)">
+                  {{ getStatusIcon(payment.status) }} {{ payment.status | titlecase }}
+                </span>
+              </div>
+            </div>
+
+            <div class="payment-body">
+              <div class="invoice-section">
+                <label>Lightning Invoice:</label>
+                <div class="invoice-display">
+                  <code>{{ payment.lnInvoice.slice(0, 60) }}...</code>
+                  <div class="invoice-actions">
+                    <button (click)="copyToClipboard(payment.lnInvoice)" class="btn-copy">📋</button>
+                    @if (payment.status === 'pending') {
+                      <button (click)="openLightningInvoice(payment.lnInvoice)" class="btn-secondary">
+                        Pay Now
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              @if (payment.expires) {
+                <div class="expiry-section">
+                  <label>Expires:</label>
+                  <span [class.expired]="isExpired(payment.expires)">
+                    {{ formatDate(payment.expires) }}
+                    @if (!isExpired(payment.expires) && payment.status === 'pending') {
+                      <span class="countdown">({{ getTimeUntilExpiration(payment.expires) }})</span>
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div class="payment-actions">
+              <button (click)="refreshPaymentStatus(payment)" class="btn-secondary">
+                Check Status
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

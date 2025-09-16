@@ -1,0 +1,263 @@
+<div class="backup-management">
+  <h1>Backup Management</h1>
+
+  <!-- Create Backup Section -->
+  <section class="create-backup">
+    <h2>Create New Backup</h2>
+    <form [formGroup]="createBackupForm" (ngSubmit)="createBackup()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="backupType">Backup Type *</label>
+          <select id="backupType" formControlName="backupType">
+            @for (type of backupTypes; track type.value) {
+              <option [value]="type.value">{{ type.label }}</option>
+            }
+          </select>
+          <div class="backup-type-description">
+            @for (type of backupTypes; track type.value) {
+              @if (createBackupForm.get('backupType')?.value === type.value) {
+                <small>{{ type.description }}</small>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="scheduledAt">Schedule (optional)</label>
+          <input 
+            id="scheduledAt" 
+            type="datetime-local" 
+            formControlName="scheduledAt"
+            [min]="minDateTime"
+          >
+          <small>Leave empty for immediate backup</small>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description (optional)</label>
+        <textarea 
+          id="description" 
+          formControlName="description"
+          placeholder="Add a description for this backup..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="createBackupForm.invalid || isCreatingBackup()" class="primary-btn">
+          @if (isCreatingBackup()) {
+            Creating Backup...
+          } @else {
+            Create Backup
+          }
+        </button>
+      </div>
+    </form>
+
+    @if (createBackupError()) {
+      <div class="error">{{ createBackupError() }}</div>
+    }
+    @if (createBackupSuccess()) {
+      <div class="success">Backup job created successfully!</div>
+    }
+  </section>
+
+  <!-- Backup Jobs List -->
+  <section class="backup-jobs">
+    <div class="section-header">
+      <h2>Backup History</h2>
+      <button (click)="refreshJobs()" [disabled]="isLoadingJobs()" class="refresh-btn">
+        @if (isLoadingJobs()) {
+          Refreshing...
+        } @else {
+          Refresh
+        }
+      </button>
+    </div>
+
+    @if (isLoadingJobs()) {
+      <div class="loading">Loading backup jobs...</div>
+    } @else if (jobsError()) {
+      <div class="error">{{ jobsError() }}</div>
+    } @else if (backupJobs().length === 0) {
+      <div class="empty-state">
+        <p>No backup jobs found.</p>
+        <p>Create your first backup using the form above.</p>
+      </div>
+    } @else {
+      <div class="jobs-grid">
+        @for (job of backupJobs(); track job.id) {
+          <div class="job-card" [class]="getStatusColor(job.status)" (click)="selectJob(job)">
+            <div class="job-header">
+              <div class="job-type">
+                <span class="type-icon">{{ getTypeIcon(job.backupType) }}</span>
+                <span class="type-label">{{ job.backupType | titlecase }} Backup</span>
+              </div>
+              <div class="job-status" [class]="getStatusColor(job.status)">
+                <span class="status-icon">{{ getStatusIcon(job.status) }}</span>
+                <span class="status-label">{{ job.status | titlecase }}</span>
+              </div>
+            </div>
+
+            <div class="job-details">
+              <div class="detail-item">
+                <strong>Created:</strong> {{ formatDate(job.requestedAt) }}
+              </div>
+              @if (job.scheduledAt) {
+                <div class="detail-item">
+                  <strong>Scheduled:</strong> {{ formatDate(job.scheduledAt) }}
+                </div>
+              }
+              @if (job.startedAt) {
+                <div class="detail-item">
+                  <strong>Started:</strong> {{ formatDate(job.startedAt) }}
+                </div>
+              }
+              @if (job.completedAt) {
+                <div class="detail-item">
+                  <strong>Completed:</strong> {{ formatDate(job.completedAt) }}
+                </div>
+              }
+              @if (job.expires && job.status === 'completed') {
+                <div class="detail-item" [class.expired]="isJobExpired(job)">
+                  <strong>Expires:</strong> {{ formatDate(job.expires) }}
+                  @if (isJobExpired(job)) {
+                    <span class="expired-badge">EXPIRED</span>
+                  }
+                </div>
+              }
+            </div>
+
+            @if (job.metadata?.description) {
+              <div class="job-description">
+                <strong>Description:</strong> {{ job.metadata.description }}
+              </div>
+            }
+
+            @if (job.errorMessage) {
+              <div class="job-error">
+                <strong>Error:</strong> {{ job.errorMessage }}
+              </div>
+            }
+
+            <div class="job-actions">
+              @if (isJobDownloadable(job)) {
+                <button (click)="downloadBackup(job); $event.stopPropagation()" class="download-btn">
+                  📥 Download
+                </button>
+              }
+              <button (click)="selectJob(job); $event.stopPropagation()" class="details-btn">
+                📄 Details
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Job Details Modal -->
+  @if (selectedJob()) {
+    <div class="modal-overlay" (click)="closeJobDetails()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Backup Job Details</h3>
+          <button class="close-btn" (click)="closeJobDetails()">×</button>
+        </div>
+
+        @if (isLoadingJobDetails()) {
+          <div class="loading">Loading job details...</div>
+        } @else if (jobDetailsError()) {
+          <div class="error">{{ jobDetailsError() }}</div>
+        } @else {
+          <div class="modal-body">
+            <div class="detail-grid">
+              <div class="detail-row">
+                <label>Job ID:</label>
+                <span class="monospace">{{ selectedJob()?.id }}</span>
+              </div>
+              <div class="detail-row">
+                <label>Type:</label>
+                <span>
+                  {{ getTypeIcon(selectedJob()!.backupType) }} {{ selectedJob()?.backupType | titlecase }} Backup
+                </span>
+              </div>
+              <div class="detail-row">
+                <label>Status:</label>
+                <span class="status-badge" [class]="getStatusColor(selectedJob()!.status)">
+                  {{ getStatusIcon(selectedJob()!.status) }} {{ selectedJob()?.status | titlecase }}
+                </span>
+              </div>
+              <div class="detail-row">
+                <label>Requested:</label>
+                <span>{{ formatDate(selectedJob()?.requestedAt) }}</span>
+              </div>
+              @if (selectedJob()?.scheduledAt) {
+                <div class="detail-row">
+                  <label>Scheduled:</label>
+                  <span>{{ formatDate(selectedJob()?.scheduledAt) }}</span>
+                </div>
+              }
+              @if (selectedJob()?.startedAt) {
+                <div class="detail-row">
+                  <label>Started:</label>
+                  <span>{{ formatDate(selectedJob()?.startedAt) }}</span>
+                </div>
+              }
+              @if (selectedJob()?.completedAt) {
+                <div class="detail-row">
+                  <label>Completed:</label>
+                  <span>{{ formatDate(selectedJob()?.completedAt) }}</span>
+                </div>
+              }
+              @if (selectedJob()?.expires) {
+                <div class="detail-row">
+                  <label>Download Expires:</label>
+                  <span [class.expired]="isJobExpired(selectedJob()!)">
+                    {{ formatDate(selectedJob()?.expires) }}
+                    @if (isJobExpired(selectedJob()!)) {
+                      <span class="expired-badge">EXPIRED</span>
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+
+            @if (selectedJob()?.metadata?.description) {
+              <div class="description-section">
+                <h4>Description</h4>
+                <p>{{ selectedJob()?.metadata.description }}</p>
+              </div>
+            }
+
+            @if (selectedJob()?.errorMessage) {
+              <div class="error-section">
+                <h4>Error Details</h4>
+                <div class="error-message">{{ selectedJob()?.errorMessage }}</div>
+              </div>
+            }
+
+            @if (selectedJob()?.metadata && objectKeys(selectedJob()!.metadata).length > 1) {
+              <div class="metadata-section">
+                <h4>Additional Metadata</h4>
+                <pre>{{ selectedJob()?.metadata | json }}</pre>
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer">
+            @if (isJobDownloadable(selectedJob()!)) {
+              <button (click)="downloadBackup(selectedJob()!)" class="primary-btn">
+                📥 Download Backup
+              </button>
+            }
+            <button (click)="closeJobDetails()" class="secondary-btn">
+              Close
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,456 @@
+<div class="notification-management">
+  <h1>Notification Management</h1>
+
+  <!-- Send Notification Section -->
+  <section class="send-notification">
+    <h2>Send Notification</h2>
+    <form [formGroup]="sendNotificationForm" (ngSubmit)="sendNotification()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="notificationType">Notification Type *</label>
+          <select id="notificationType" formControlName="notificationType">
+            <option value="direct">Direct Notification</option>
+            <option value="template">Template-based</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="pubkeys">Target Users (optional)</label>
+          <textarea 
+            id="pubkeys" 
+            formControlName="pubkeys"
+            placeholder="Enter public keys separated by commas (leave empty to broadcast to all users)"
+            rows="3"
+          ></textarea>
+          <small>Comma-separated public keys in hex format</small>
+        </div>
+      </div>
+
+      @if (sendNotificationForm.get('notificationType')?.value === 'direct') {
+        <div class="form-row">
+          <div class="form-group">
+            <label for="title">Title *</label>
+            <input 
+              id="title" 
+              type="text" 
+              formControlName="title"
+              placeholder="Notification title"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="body">Body *</label>
+            <textarea 
+              id="body" 
+              formControlName="body"
+              placeholder="Notification message"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="icon">Icon URL (optional)</label>
+            <input 
+              id="icon" 
+              type="url" 
+              formControlName="icon"
+              placeholder="https://example.com/icon.png"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="url">Action URL (optional)</label>
+            <input 
+              id="url" 
+              type="url" 
+              formControlName="url"
+              placeholder="https://example.com/action"
+            >
+          </div>
+        </div>
+      } @else {
+        <div class="form-row">
+          <div class="form-group">
+            <label for="template">Template Name *</label>
+            <input 
+              id="template" 
+              type="text" 
+              formControlName="template"
+              placeholder="e.g., message_received"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="templateArgs">Template Arguments (JSON)</label>
+            <textarea 
+              id="templateArgs" 
+              formControlName="templateArgs"
+              placeholder='{"username": "John", "count": 3}'
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+      }
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="sendNotificationForm.invalid || isSendingNotification()" class="primary-btn">
+          @if (isSendingNotification()) {
+            Sending...
+          } @else {
+            Send Notification
+          }
+        </button>
+        <button type="button" (click)="clearResults()" class="secondary-btn">
+          Clear Results
+        </button>
+      </div>
+    </form>
+
+    @if (sendNotificationError()) {
+      <div class="error">{{ sendNotificationError() }}</div>
+    }
+  </section>
+
+  <!-- Notification Results Section -->
+  @if (notificationResult()) {
+    <section class="notification-results">
+      <div class="section-header">
+        <h2>Notification Results</h2>
+        <div class="header-actions">
+          <button (click)="exportResults()" class="export-btn">📤 Export</button>
+        </div>
+      </div>
+
+      <div class="results-summary">
+        <div class="summary-card success">
+          <div class="metric-value">{{ notificationResult()?.summary?.successful }}</div>
+          <div class="metric-label">Successful</div>
+        </div>
+        <div class="summary-card error">
+          <div class="metric-value">{{ notificationResult()?.summary?.failed }}</div>
+          <div class="metric-label">Failed</div>
+        </div>
+        <div class="summary-card warning">
+          <div class="metric-value">{{ notificationResult()?.summary?.filtered }}</div>
+          <div class="metric-label">Filtered</div>
+        </div>
+        <div class="summary-card info">
+          <div class="metric-value">{{ notificationResult()?.summary?.limited }}</div>
+          <div class="metric-label">Rate Limited</div>
+        </div>
+        <div class="summary-card total">
+          <div class="metric-value">{{ calculateSuccessRate(notificationResult()!) }}%</div>
+          <div class="metric-label">Success Rate</div>
+        </div>
+      </div>
+
+      <div class="results-details">
+        @if (notificationResult()?.success?.length) {
+          <div class="detail-section">
+            <h3>✅ Successful ({{ notificationResult()?.success?.length }})</h3>
+            <div class="detail-list">
+              @for (item of notificationResult()?.success; track item.pubkey) {
+                <div class="detail-item success">
+                  <strong>{{ formatPubkey(item.pubkey) }}</strong>
+                  <span>{{ item.successCount }} sent, {{ item.failCount }} failed</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (notificationResult()?.failed?.length) {
+          <div class="detail-section">
+            <h3>❌ Failed ({{ notificationResult()?.failed?.length }})</h3>
+            <div class="detail-list">
+              @for (item of notificationResult()?.failed; track item.pubkey) {
+                <div class="detail-item error">
+                  <strong>{{ formatPubkey(item.pubkey) }}</strong>
+                  <span>{{ item.reason }} ({{ item.deviceCount }} devices)</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (notificationResult()?.filtered?.length) {
+          <div class="detail-section">
+            <h3>🔽 Filtered ({{ notificationResult()?.filtered?.length }})</h3>
+            <div class="detail-list">
+              @for (item of notificationResult()?.filtered; track item.pubkey) {
+                <div class="detail-item warning">
+                  <strong>{{ formatPubkey(item.pubkey) }}</strong>
+                  <span>{{ item.reason }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (notificationResult()?.limited?.length) {
+          <div class="detail-section">
+            <h3>⏳ Rate Limited ({{ notificationResult()?.limited?.length }})</h3>
+            <div class="detail-list">
+              @for (item of notificationResult()?.limited; track item.pubkey) {
+                <div class="detail-item info">
+                  <strong>{{ formatPubkey(item.pubkey) }}</strong>
+                  <span>{{ item.reason }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Status Check Section -->
+  <section class="status-check">
+    <h2>Check User Status</h2>
+    <form [formGroup]="statusCheckForm" (ngSubmit)="checkNotificationStatus()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="pubkey">User Public Key *</label>
+          <input 
+            id="pubkey" 
+            type="text" 
+            formControlName="pubkey"
+            placeholder="Enter 64-character hex public key"
+            maxlength="64"
+          >
+        </div>
+        <div class="form-actions">
+          <button type="submit" [disabled]="statusCheckForm.invalid || isCheckingStatus()" class="primary-btn">
+            @if (isCheckingStatus()) {
+              Checking...
+            } @else {
+              Check Status
+            }
+          </button>
+        </div>
+      </div>
+    </form>
+
+    @if (statusError()) {
+      <div class="error">{{ statusError() }}</div>
+    }
+
+    @if (notificationStatus()) {
+      <div class="status-result">
+        <h3>User Notification Status</h3>
+        <div class="status-grid">
+          <div class="status-item">
+            <label>Public Key:</label>
+            <span class="monospace">{{ formatPubkey(notificationStatus()!.pubkey) }}</span>
+          </div>
+          <div class="status-item">
+            <label>Has Subscription:</label>
+            <span [class]="notificationStatus()?.hasSubscription ? 'status-yes' : 'status-no'">
+              {{ notificationStatus()?.hasSubscription ? 'Yes' : 'No' }}
+            </span>
+          </div>
+          <div class="status-item">
+            <label>Device Count:</label>
+            <span>{{ notificationStatus()?.deviceCount }} devices</span>
+          </div>
+          <div class="status-item">
+            <label>Premium User:</label>
+            <span [class]="notificationStatus()?.isPremium ? 'status-yes' : 'status-no'">
+              {{ notificationStatus()?.isPremium ? 'Yes' : 'No' }}
+            </span>
+          </div>
+          <div class="status-item">
+            <label>Notifications Enabled:</label>
+            <span [class]="notificationStatus()?.settings?.enabled ? 'status-yes' : 'status-no'">
+              {{ notificationStatus()?.settings?.enabled ? 'Yes' : 'No' }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="usage-stats">
+          <h4>Usage Statistics</h4>
+          <div class="usage-grid">
+            <div class="usage-item">
+              <span class="usage-label">Today:</span>
+              <span class="usage-value">{{ notificationStatus()?.notifications?.count24h }}</span>
+            </div>
+            <div class="usage-item">
+              <span class="usage-label">Daily Limit:</span>
+              <span class="usage-value">{{ notificationStatus()?.notifications?.dailyLimit }}</span>
+            </div>
+            <div class="usage-item">
+              <span class="usage-label">Remaining:</span>
+              <span class="usage-value" [class.warning]="(notificationStatus()?.notifications?.remaining || 0) <= 5">
+                {{ notificationStatus()?.notifications?.remaining }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="usage-bar">
+            <div class="usage-progress" 
+                 [style.width.%]="(notificationStatus()!.notifications.count24h / notificationStatus()!.notifications.dailyLimit) * 100">
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Test Notification Section -->
+  <section class="test-notification">
+    <h2>Send Test Notification</h2>
+    <form [formGroup]="testNotificationForm" (ngSubmit)="sendTestNotification()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="testPubkey">Target User Public Key *</label>
+          <input 
+            id="testPubkey" 
+            type="text" 
+            formControlName="testPubkey"
+            placeholder="Enter 64-character hex public key"
+            maxlength="64"
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="testTitle">Title *</label>
+          <input 
+            id="testTitle" 
+            type="text" 
+            formControlName="testTitle"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="testBody">Body *</label>
+          <textarea 
+            id="testBody" 
+            formControlName="testBody"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="testIcon">Icon URL (optional)</label>
+          <input 
+            id="testIcon" 
+            type="url" 
+            formControlName="testIcon"
+            placeholder="https://example.com/icon.png"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="testData">Additional Data (JSON, optional)</label>
+          <textarea 
+            id="testData" 
+            formControlName="testData"
+            placeholder='{"key": "value"}'
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="testNotificationForm.invalid || isSendingTest()" class="primary-btn">
+          @if (isSendingTest()) {
+            Sending Test...
+          } @else {
+            Send Test Notification
+          }
+        </button>
+      </div>
+    </form>
+
+    @if (testNotificationError()) {
+      <div class="error">{{ testNotificationError() }}</div>
+    }
+    @if (testNotificationSuccess()) {
+      <div class="success">Test notification sent successfully!</div>
+    }
+  </section>
+
+  <!-- Subscription Registration Section -->
+  <section class="subscription-registration">
+    <h2>Register Push Subscription</h2>
+    <form [formGroup]="subscriptionForm" (ngSubmit)="registerSubscription()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="subPubkey">User Public Key *</label>
+          <input 
+            id="subPubkey" 
+            type="text" 
+            formControlName="subPubkey"
+            placeholder="Enter 64-character hex public key"
+            maxlength="64"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="endpoint">Push Endpoint *</label>
+          <input 
+            id="endpoint" 
+            type="url" 
+            formControlName="endpoint"
+            placeholder="https://fcm.googleapis.com/fcm/send/..."
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="p256dh">P256DH Key *</label>
+          <input 
+            id="p256dh" 
+            type="text" 
+            formControlName="p256dh"
+            placeholder="P256DH encryption key"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="auth">Auth Secret *</label>
+          <input 
+            id="auth" 
+            type="text" 
+            formControlName="auth"
+            placeholder="Authentication secret"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="userAgent">User Agent (optional)</label>
+        <input 
+          id="userAgent" 
+          type="text" 
+          formControlName="userAgent"
+          placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+        >
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="subscriptionForm.invalid || isRegisteringSubscription()" class="primary-btn">
+          @if (isRegisteringSubscription()) {
+            Registering...
+          } @else {
+            Register Subscription
+          }
+        </button>
+      </div>
+    </form>
+
+    @if (subscriptionError()) {
+      <div class="error">{{ subscriptionError() }}</div>
+    }
+    @if (subscriptionSuccess()) {
+      <div class="success">Push subscription registered successfully!</div>
+    }
+  </section>
+</div>
