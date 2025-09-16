@@ -2,7 +2,7 @@
 export { ApiService } from './core/services/api.service';
 
 // Shared models
-export { 
+export type { 
   ApiResponse, 
   Customer, 
   Server, 
