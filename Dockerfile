@@ -7,7 +7,7 @@ RUN npm run build
 
 FROM nginx:alpine
 # Copy the built Angular app to nginx html directory
-COPY --from=build /app/src/dist/nostria-management-portal/ /usr/share/nginx/html/
+COPY --from=build /app/src/dist/nostria-management-portal/browser/ /usr/share/nginx/html/
 # Copy nginx configuration for Angular SPA
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
