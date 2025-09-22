@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../../environments/environment';
 import { 
   ApiResponse, Customer, Server, ServerConfig,
   // Nostria API Types
@@ -27,7 +28,11 @@ export interface ApiOptions {
   providedIn: 'root'
 })
 export class ApiService {
-  private readonly baseUrl = 'http://localhost:3000/api'; // Nostria API endpoint
+  // Ensure baseUrl ends with '/api' to be compatible with existing endpoint paths
+  private readonly baseUrl = (() => {
+    const envUrl = environment.apiBaseUrl || 'http://localhost:3000';
+    return envUrl.endsWith('/api') ? envUrl : envUrl.replace(/\/$/, '') + '/api';
+  })();
 
   constructor(
     private nip98Auth: Nip98AuthService,
