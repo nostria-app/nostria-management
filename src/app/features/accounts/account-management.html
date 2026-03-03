@@ -404,11 +404,42 @@
                     📋 Copy Username
                   </button>
                 }
+                <button 
+                  class="btn-sm btn-extend" 
+                  (click)="extendSubscription(account, { weeks: 1 })"
+                  [disabled]="extendingPubkey() === account.pubkey"
+                  title="Extend subscription by 1 week (no invoice)"
+                >
+                  @if (extendingPubkey() === account.pubkey) {
+                    ⏳ Extending...
+                  } @else {
+                    📅 +1 Week
+                  }
+                </button>
+                <button 
+                  class="btn-sm btn-extend" 
+                  (click)="extendSubscription(account, { months: 1 })"
+                  [disabled]="extendingPubkey() === account.pubkey"
+                  title="Extend subscription by 1 month (no invoice)"
+                >
+                  @if (extendingPubkey() === account.pubkey) {
+                    ⏳ Extending...
+                  } @else {
+                    📅 +1 Month
+                  }
+                </button>
               </div>
             </div>
           }
         </div>
       </div>
+    @if (extendSuccess()) {
+      <div class="success">{{ extendSuccess() }}</div>
+    }
+    @if (extendError()) {
+      <div class="error">{{ extendError() }}</div>
+    }
+
     } @else if (!isListingAccounts() && !listAccountsError()) {
       <div class="empty-state">
         <p>Connect your Nostr extension and click "Sign Message & List Accounts" to retrieve account records</p>

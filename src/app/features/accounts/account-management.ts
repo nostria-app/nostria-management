@@ -39,6 +39,10 @@ export class AccountManagement implements OnInit {
   lookupResult = signal<any | null>(null);
   lookupError = signal<string | null>(null);
 
+  extendingPubkey = signal<string | null>(null);
+  extendError = signal<string | null>(null);
+  extendSuccess = signal<string | null>(null);
+
   // List accounts with NIP-98 auth (for when API becomes available)
   isListingAccounts = signal(false);
   listAccountsError = signal<string | null>(null);
@@ -424,6 +428,34 @@ export class AccountManagement implements OnInit {
     } else {
       const minutes = Math.floor((diff % 3600) / 60);
       return `${minutes} minute${minutes !== 1 ? 's' : ''} left`;
+    }
+  }
+
+  async extendSubscription(account: Account, duration: { months: 1 } | { weeks: 1 }) {
+    this.extendingPubkey.set(account.pubkey);
+    this.extendError.set(null);
+    this.extendSuccess.set(null);
+
+    const label = 'months' in duration ? '1 month' : '1 week';
+
+    try {
+      const response = await this.apiService.extendSubscription(account.pubkey, duration);
+      if (response.success) {
+        this.extendSuccess.set(`Subscription extended by ${label} for ${account.pubkey.substring(0, 8)}...`);
+        // Update the account's expiry in the local list
+        if (response.data?.newExpires) {
+          const updated = this.listedAccounts().map(a =>
+            a.pubkey === account.pubkey ? { ...a, expires: response.data.newExpires } : a
+          );
+          this.listedAccounts.set(updated);
+        }
+      } else {
+        this.extendError.set(response.message || 'Failed to extend subscription');
+      }
+    } catch (error) {
+      this.extendError.set(error instanceof Error ? error.message : 'Network error extending subscription');
+    } finally {
+      this.extendingPubkey.set(null);
     }
   }
 
