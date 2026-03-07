@@ -695,6 +695,22 @@
                 border: 1px solid #bfdbfe;
               }
             }
+
+            .x-connection {
+              &.connected {
+                color: #15803d;
+              }
+
+              &.disconnected {
+                color: #b45309;
+              }
+            }
+
+            .x-usage-count,
+            .x-usage-limit,
+            .mono {
+              font-family: 'Courier New', Courier, monospace;
+            }
           }
         }
       }

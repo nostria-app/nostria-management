@@ -52,6 +52,22 @@ export interface Account {
   expires?: number;
   tier: Tier;
   entitlements: Entitlements;
+  xConnection?: XConnectionInfo;
+  xUsage?: XUsageInfo;
+}
+
+export interface XConnectionInfo {
+  connected: boolean;
+  username?: string;
+  userId?: string;
+}
+
+export interface XUsageInfo {
+  totalPosts: number;
+  postsLast24h: number;
+  lastPosted?: number;
+  limit24h?: number;
+  remaining24h?: number;
 }
 
 export interface AddAccountRequest {
