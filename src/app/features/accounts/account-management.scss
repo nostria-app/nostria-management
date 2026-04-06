@@ -695,6 +695,22 @@
                 border: 1px solid #bfdbfe;
               }
             }
+
+            .x-connection {
+              &.connected {
+                color: #15803d;
+              }
+
+              &.disconnected {
+                color: #b45309;
+              }
+            }
+
+            .x-usage-count,
+            .x-usage-limit,
+            .mono {
+              font-family: 'Courier New', Courier, monospace;
+            }
           }
         }
       }
@@ -739,6 +755,22 @@
             &:hover:not(:disabled) {
               background: #f9fafb;
               border-color: #9ca3af;
+            }
+          }
+
+          &.btn-extend {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: white;
+
+            &:hover:not(:disabled) {
+              background: #d97706;
+              border-color: #d97706;
+            }
+
+            &:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
             }
           }
         }

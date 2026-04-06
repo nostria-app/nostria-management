@@ -8,6 +8,20 @@ import {
   TierDetails, Account, AddAccountRequest, UpdateAccountRequest 
 } from '../../shared/models/api.models';
 
+type AccountListResponse = {
+  pubkey: string;
+  username?: string;
+  created: number;
+  lastLoginDate?: number;
+  expires?: number;
+  tier: Account['tier'];
+  subscription?: {
+    entitlements?: Account['entitlements'];
+  };
+  xConnection?: Account['xConnection'];
+  xUsage?: Account['xUsage'];
+};
+
 @Component({
   selector: 'app-account-management',
   standalone: true,
@@ -38,6 +52,10 @@ export class AccountManagement implements OnInit {
   isLookingUp = signal(false);
   lookupResult = signal<any | null>(null);
   lookupError = signal<string | null>(null);
+
+  extendingPubkey = signal<string | null>(null);
+  extendError = signal<string | null>(null);
+  extendSuccess = signal<string | null>(null);
 
   // List accounts with NIP-98 auth (for when API becomes available)
   isListingAccounts = signal(false);
@@ -325,23 +343,25 @@ export class AccountManagement implements OnInit {
       const limit = this.listAccountsForm.get('limit')?.value || 50;
       
       // Real API call using NIP-98 authentication
-      const response = await this.apiService.makeAuthenticatedRequest<any[]>(`/account/list?limit=${limit}`, {
+      const response = await this.apiService.makeAuthenticatedRequest<AccountListResponse[]>(`/account/list?limit=${limit}`, {
         method: 'GET'
       });
 
       if (response.success && response.data) {
         // Convert AccountList objects to Account objects for display
-        const accounts: Account[] = response.data.map((accountList: any) => ({
+        const accounts: Account[] = response.data.map((accountList) => ({
           pubkey: accountList.pubkey,
           username: accountList.username,
           signupDate: accountList.created,
           lastLoginDate: accountList.lastLoginDate,
           expires: accountList.expires,
           tier: accountList.tier,
-          entitlements: {
+          entitlements: accountList.subscription?.entitlements || {
             notificationsPerDay: this.getNotificationsPerDayForTier(accountList.tier),
             features: this.getFeaturesForTier(accountList.tier)
-          }
+          },
+          xConnection: accountList.xConnection,
+          xUsage: accountList.xUsage,
         }));
         this.listedAccounts.set(accounts);
       } else {
@@ -388,6 +408,22 @@ export class AccountManagement implements OnInit {
     }
   }
 
+  getXConnectionLabel(account: Account): string {
+    if (!account.xConnection?.connected) {
+      return 'Not connected';
+    }
+
+    return account.xConnection.username ? `Connected as @${account.xConnection.username}` : 'Connected';
+  }
+
+  getXUsageRemaining(account: Account): string {
+    if (account.xUsage?.limit24h === undefined || account.xUsage.remaining24h === undefined) {
+      return 'No daily cap configured';
+    }
+
+    return `${account.xUsage.remaining24h} remaining of ${account.xUsage.limit24h}`;
+  }
+
   async copyToClipboard(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
@@ -427,6 +463,34 @@ export class AccountManagement implements OnInit {
     } else {
       const minutes = Math.floor((diff % 3600) / 60);
       return `${minutes} minute${minutes !== 1 ? 's' : ''} left`;
+    }
+  }
+
+  async extendSubscription(account: Account, duration: { months: 1 } | { weeks: 1 }) {
+    this.extendingPubkey.set(account.pubkey);
+    this.extendError.set(null);
+    this.extendSuccess.set(null);
+
+    const label = 'months' in duration ? '1 month' : '1 week';
+
+    try {
+      const response = await this.apiService.extendSubscription(account.pubkey, duration);
+      if (response.success) {
+        this.extendSuccess.set(`Subscription extended by ${label} for ${account.pubkey.substring(0, 8)}...`);
+        // Update the account's expiry in the local list
+        if (response.data?.newExpires) {
+          const updated = this.listedAccounts().map(a =>
+            a.pubkey === account.pubkey ? { ...a, expires: response.data.newExpires } : a
+          );
+          this.listedAccounts.set(updated);
+        }
+      } else {
+        this.extendError.set(response.message || 'Failed to extend subscription');
+      }
+    } catch (error) {
+      this.extendError.set(error instanceof Error ? error.message : 'Network error extending subscription');
+    } finally {
+      this.extendingPubkey.set(null);
     }
   }
 

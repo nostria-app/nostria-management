@@ -375,6 +375,42 @@
                     </div>
                   </div>
                 </div>
+
+                <div class="detail-row x-details-row">
+                  <div class="detail-item">
+                    <label>X Authorization:</label>
+                    <span class="x-connection" [class.connected]="account.xConnection?.connected" [class.disconnected]="!account.xConnection?.connected">
+                      {{ getXConnectionLabel(account) }}
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <label>X Posts:</label>
+                    <span class="x-usage-count">{{ account.xUsage?.totalPosts || 0 }} total</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Last 24h:</label>
+                    <span class="x-usage-count">{{ account.xUsage?.postsLast24h || 0 }}</span>
+                  </div>
+                </div>
+
+                <div class="detail-row x-details-row">
+                  <div class="detail-item">
+                    <label>24h Limit:</label>
+                    <span class="x-usage-limit">{{ getXUsageRemaining(account) }}</span>
+                  </div>
+                  @if (account.xUsage?.lastPosted) {
+                    <div class="detail-item">
+                      <label>Last X Post:</label>
+                      <span class="timestamp">{{ formatDate(account.xUsage?.lastPosted) }}</span>
+                    </div>
+                  }
+                  @if (account.xConnection?.userId) {
+                    <div class="detail-item">
+                      <label>X User ID:</label>
+                      <span class="mono">{{ account.xConnection?.userId }}</span>
+                    </div>
+                  }
+                </div>
               </div>
 
               <!-- Actions -->
@@ -404,11 +440,42 @@
                     📋 Copy Username
                   </button>
                 }
+                <button 
+                  class="btn-sm btn-extend" 
+                  (click)="extendSubscription(account, { weeks: 1 })"
+                  [disabled]="extendingPubkey() === account.pubkey"
+                  title="Extend subscription by 1 week (no invoice)"
+                >
+                  @if (extendingPubkey() === account.pubkey) {
+                    ⏳ Extending...
+                  } @else {
+                    📅 +1 Week
+                  }
+                </button>
+                <button 
+                  class="btn-sm btn-extend" 
+                  (click)="extendSubscription(account, { months: 1 })"
+                  [disabled]="extendingPubkey() === account.pubkey"
+                  title="Extend subscription by 1 month (no invoice)"
+                >
+                  @if (extendingPubkey() === account.pubkey) {
+                    ⏳ Extending...
+                  } @else {
+                    📅 +1 Month
+                  }
+                </button>
               </div>
             </div>
           }
         </div>
       </div>
+    @if (extendSuccess()) {
+      <div class="success">{{ extendSuccess() }}</div>
+    }
+    @if (extendError()) {
+      <div class="error">{{ extendError() }}</div>
+    }
+
     } @else if (!isListingAccounts() && !listAccountsError()) {
       <div class="empty-state">
         <p>Connect your Nostr extension and click "Sign Message & List Accounts" to retrieve account records</p>

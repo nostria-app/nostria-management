@@ -420,4 +420,16 @@ export class ApiService {
       body: account
     });
   }
+
+  /**
+   * Extend an account's subscription (admin action, no invoice created)
+   * @param pubkey The public key of the account to extend
+   * @param duration Either { months: 1 } or { weeks: 1 }
+   */
+  async extendSubscription(pubkey: string, duration: { months: 1 } | { weeks: 1 }): Promise<ApiResponse<{ success: boolean, message: string, newExpires: number }>> {
+    return this.makeAuthenticatedRequest<{ success: boolean, message: string, newExpires: number }>(`/account/${pubkey}/extend`, {
+      method: 'POST',
+      body: duration
+    });
+  }
 }
