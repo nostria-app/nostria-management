@@ -64,9 +64,10 @@ export interface UpdateAccountRequest {
   username?: string;
 }
 
-export type Feature = 'BASIC_WEB_PUSH' | 'COMMUNITY_SUPPORT' | 'USERNAME' | 
-  'ADVANCED_FILTERING' | 'PRIORITY_SUPPORT' | 'CUSTOM_TEMPLATES' | 
-  'API_ACCESS' | 'WEBHOOK' | 'ANALYTICS';
+export type Feature = 'BASIC_WEBPUSH' | 'COMMUNITY_SUPPORT' | 'USERNAME' |
+  'NEWSLETTER' | 'STORAGE_1GB' | 'STORAGE_5GB' | 'STORAGE_50GB' |
+  'DUAL_POST_X_10' | 'ANALYTICS' | 'CLOUD_BACKUP_COMING_SOON' |
+  'MEMOS' | 'YOUTUBE' | 'EXTRA_BACKUP_FEATURES';
 
 export interface FeatureWithLabel {
   key: Feature;
@@ -91,12 +92,12 @@ export interface Entitlements {
   features: FeatureWithLabel[];
 }
 
-export type Tier = 'free' | 'premium' | 'premium_plus';
+export type Tier = 'free' | 'basic' | 'premium' | 'premium_plus';
 
 export interface TierDetails {
   tier: Tier;
   name: string;
-  pricing: Pricing;
+  pricing?: Pricing;
   entitlements: Entitlements;
 }
 

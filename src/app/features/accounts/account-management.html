@@ -11,15 +11,15 @@
           <div class="tier-info">
             <span class="tier-type">{{ tier.tier }}</span>
             <div class="pricing">
-              @if (tier.pricing.monthly) {
+              @if (tier.pricing?.monthly; as monthlyPrice) {
                 <div class="price">
-                  <span class="amount">${{ formatPrice(tier.pricing.monthly.priceCents) }}</span>
+                  <span class="amount">${{ formatPrice(monthlyPrice.priceCents) }}</span>
                   <span class="period">/month</span>
                 </div>
               }
-              @if (tier.pricing.yearly) {
+              @if (tier.pricing?.yearly; as yearlyPrice) {
                 <div class="price annual">
-                  <span class="amount">${{ formatPrice(tier.pricing.yearly.priceCents) }}</span>
+                  <span class="amount">${{ formatPrice(yearlyPrice.priceCents) }}</span>
                   <span class="period">/year</span>
                 </div>
               }
@@ -142,7 +142,7 @@
           @if (lookupResult()?.username) {
             <p><strong>Username:</strong> {{ lookupResult()?.username }}</p>
           }
-          <p><strong>Tier:</strong> {{ lookupResult()?.tier }}</p>
+          <p><strong>Tier:</strong> {{ getTierDisplayName(lookupResult()?.tier) }}</p>
           <p><strong>Active:</strong> {{ lookupResult()?.isActive ? 'Yes' : 'No' }}</p>
           <p><strong>Signup Date:</strong> {{ formatDate(lookupResult()?.signupDate) }}</p>
         </div>
@@ -163,7 +163,7 @@
         @if (currentAccount()?.username) {
           <p><strong>Username:</strong> {{ currentAccount()?.username }}</p>
         }
-        <p><strong>Tier:</strong> {{ currentAccount()?.tier }}</p>
+        <p><strong>Tier:</strong> {{ getTierDisplayName(currentAccount()?.tier || 'free') }}</p>
         <p><strong>Signup Date:</strong> {{ formatDate(currentAccount()?.signupDate) }}</p>
         @if (currentAccount()?.lastLoginDate) {
           <p><strong>Last Login:</strong> {{ formatDate(currentAccount()?.lastLoginDate) }}</p>

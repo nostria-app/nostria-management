@@ -48,6 +48,7 @@ export class PaymentManagement implements OnInit {
   // Available options
   tierOptions: { value: Tier; label: string }[] = [
     { value: 'free', label: 'Free' },
+    { value: 'basic', label: 'Basic' },
     { value: 'premium', label: 'Premium' },
     { value: 'premium_plus', label: 'Premium Plus' }
   ];
@@ -113,9 +114,9 @@ export class PaymentManagement implements OnInit {
         lnHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
         lnInvoice: 'lnbc100u1pj...',
         lnAmountSat: 10000,
-        tier: 'premium',
+        tier: 'basic',
         billingCycle: 'monthly',
-        priceCents: 1000,
+        priceCents: 500,
         pubkey: '8e9f64b35e7e4384b5248f1d4294f109bb8d3442b04d7c59a62c04e702441488',
         isPaid: true,
         paid: Math.floor(Date.now() / 1000) - 3600,
@@ -132,7 +133,7 @@ export class PaymentManagement implements OnInit {
         lnAmountSat: 5000,
         tier: 'premium',
         billingCycle: 'monthly',
-        priceCents: 500,
+        priceCents: 1000,
         pubkey: 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
         isPaid: false,
         status: 'expired',
@@ -145,10 +146,10 @@ export class PaymentManagement implements OnInit {
         type: 'payment',
         paymentType: 'ln',
         lnInvoice: 'lnbc200u1pj...',
-        lnAmountSat: 20000,
+        lnAmountSat: 45000,
         tier: 'premium_plus',
         billingCycle: 'quarterly',
-        priceCents: 2500,
+        priceCents: 13500,
         pubkey: 'f1e2d3c4b5a6978901234567890abcdef1234567890abcdef1234567890abcde',
         isPaid: false,
         status: 'pending',
@@ -179,7 +180,7 @@ export class PaymentManagement implements OnInit {
       if (response.success && response.data) {
         this.createdPayment.set(response.data);
         this.createPaymentForm.reset({
-          tierName: 'premium',
+          tierName: 'basic',
           billingCycle: 'monthly',
           pubkey: ''
         });

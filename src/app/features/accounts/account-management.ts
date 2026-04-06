@@ -100,14 +100,13 @@ export class AccountManagement implements OnInit {
         signupDate: Math.floor(Date.now() / 1000) - 86400 * 30, // 30 days ago
         lastLoginDate: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
         expires: Math.floor(Date.now() / 1000) + 86400 * 335, // ~1 year from now
-        tier: 'premium',
+        tier: 'basic',
         entitlements: {
-          notificationsPerDay: 1000,
+          notificationsPerDay: 50,
           features: [
-            { key: 'BASIC_WEB_PUSH', label: 'Basic Web Push' },
-            { key: 'USERNAME', label: 'Custom Username' },
-            { key: 'ADVANCED_FILTERING', label: 'Advanced Filtering' },
-            { key: 'PRIORITY_SUPPORT', label: 'Priority Support' }
+            { key: 'BASIC_WEBPUSH', label: 'Basic web push notifications' },
+            { key: 'USERNAME', label: 'Username in URL' },
+            { key: 'STORAGE_1GB', label: '1GB cloud storage' }
           ]
         }
       },
@@ -119,15 +118,18 @@ export class AccountManagement implements OnInit {
         expires: Math.floor(Date.now() / 1000) + 86400 * 350, // ~1 year from now
         tier: 'premium_plus',
         entitlements: {
-          notificationsPerDay: 5000,
+          notificationsPerDay: 500,
           features: [
-            { key: 'BASIC_WEB_PUSH', label: 'Basic Web Push' },
-            { key: 'USERNAME', label: 'Custom Username' },
-            { key: 'ADVANCED_FILTERING', label: 'Advanced Filtering' },
-            { key: 'PRIORITY_SUPPORT', label: 'Priority Support' },
-            { key: 'API_ACCESS', label: 'API Access' },
-            { key: 'WEBHOOK', label: 'Webhook Support' },
-            { key: 'ANALYTICS', label: 'Analytics Dashboard' }
+            { key: 'BASIC_WEBPUSH', label: 'Basic web push notifications' },
+            { key: 'USERNAME', label: 'Username in URL' },
+            { key: 'NEWSLETTER', label: 'Newsletter' },
+            { key: 'STORAGE_50GB', label: '50GB cloud storage' },
+            { key: 'DUAL_POST_X_10', label: 'Dual post to X (max 10 posts/day)' },
+            { key: 'ANALYTICS', label: 'Analytics' },
+            { key: 'CLOUD_BACKUP_COMING_SOON', label: 'Cloud backup (coming soon)' },
+            { key: 'MEMOS', label: 'Memos' },
+            { key: 'YOUTUBE', label: 'YouTube' },
+            { key: 'EXTRA_BACKUP_FEATURES', label: 'Extra backup features' }
           ]
         }
       },
@@ -137,9 +139,9 @@ export class AccountManagement implements OnInit {
         lastLoginDate: Math.floor(Date.now() / 1000) - 86400 * 2, // 2 days ago
         tier: 'free',
         entitlements: {
-          notificationsPerDay: 25,
+          notificationsPerDay: 5,
           features: [
-            { key: 'BASIC_WEB_PUSH', label: 'Basic Web Push' },
+            { key: 'BASIC_WEBPUSH', label: 'Basic web push notifications' },
             { key: 'COMMUNITY_SUPPORT', label: 'Community Support' }
           ]
         }
@@ -152,12 +154,11 @@ export class AccountManagement implements OnInit {
         expires: Math.floor(Date.now() / 1000) + 86400 * 305, // ~10 months from now
         tier: 'premium',
         entitlements: {
-          notificationsPerDay: 1000,
+          notificationsPerDay: 150,
           features: [
-            { key: 'BASIC_WEB_PUSH', label: 'Basic Web Push' },
-            { key: 'USERNAME', label: 'Custom Username' },
-            { key: 'ADVANCED_FILTERING', label: 'Advanced Filtering' },
-            { key: 'PRIORITY_SUPPORT', label: 'Priority Support' }
+            { key: 'BASIC_WEBPUSH', label: 'Basic web push notifications' },
+            { key: 'USERNAME', label: 'Username in URL' },
+            { key: 'STORAGE_5GB', label: '5GB cloud storage' }
           ]
         }
       }
@@ -370,6 +371,7 @@ export class AccountManagement implements OnInit {
     
     switch (account.tier) {
       case 'premium_plus': return 'premium-plus';
+      case 'basic': return 'premium';
       case 'premium': return 'premium';
       case 'free': return 'free';
       default: return 'free';
@@ -379,6 +381,7 @@ export class AccountManagement implements OnInit {
   getTierDisplayName(tier: string): string {
     switch (tier) {
       case 'premium_plus': return 'Premium Plus';
+      case 'basic': return 'Basic';
       case 'premium': return 'Premium';
       case 'free': return 'Free';
       default: return tier;
@@ -429,35 +432,44 @@ export class AccountManagement implements OnInit {
 
   getNotificationsPerDayForTier(tier: string): number {
     switch (tier) {
-      case 'premium_plus': return 5000;
-      case 'premium': return 1000;
-      case 'free': return 25;
-      default: return 25;
+      case 'premium_plus': return 500;
+      case 'premium': return 150;
+      case 'basic': return 50;
+      case 'free': return 5;
+      default: return 5;
     }
   }
 
   getFeaturesForTier(tier: string): any[] {
     const baseFeatures = [
-      { key: 'BASIC_WEB_PUSH', label: 'Basic Web Push' }
+      { key: 'BASIC_WEBPUSH', label: 'Basic web push notifications' }
     ];
 
     switch (tier) {
       case 'premium_plus':
         return [
           ...baseFeatures,
-          { key: 'USERNAME', label: 'Custom Username' },
-          { key: 'ADVANCED_FILTERING', label: 'Advanced Filtering' },
-          { key: 'PRIORITY_SUPPORT', label: 'Priority Support' },
-          { key: 'API_ACCESS', label: 'API Access' },
-          { key: 'WEBHOOK', label: 'Webhook Support' },
-          { key: 'ANALYTICS', label: 'Analytics Dashboard' }
+          { key: 'USERNAME', label: 'Username in URL' },
+          { key: 'NEWSLETTER', label: 'Newsletter' },
+          { key: 'STORAGE_50GB', label: '50GB cloud storage' },
+          { key: 'DUAL_POST_X_10', label: 'Dual post to X (max 10 posts/day)' },
+          { key: 'ANALYTICS', label: 'Analytics' },
+          { key: 'CLOUD_BACKUP_COMING_SOON', label: 'Cloud backup (coming soon)' },
+          { key: 'MEMOS', label: 'Memos' },
+          { key: 'YOUTUBE', label: 'YouTube' },
+          { key: 'EXTRA_BACKUP_FEATURES', label: 'Extra backup features' }
+        ];
+      case 'basic':
+        return [
+          ...baseFeatures,
+          { key: 'USERNAME', label: 'Username in URL' },
+          { key: 'STORAGE_1GB', label: '1GB cloud storage' }
         ];
       case 'premium':
         return [
           ...baseFeatures,
-          { key: 'USERNAME', label: 'Custom Username' },
-          { key: 'ADVANCED_FILTERING', label: 'Advanced Filtering' },
-          { key: 'PRIORITY_SUPPORT', label: 'Priority Support' }
+          { key: 'USERNAME', label: 'Username in URL' },
+          { key: 'STORAGE_5GB', label: '5GB cloud storage' }
         ];
       case 'free':
       default:

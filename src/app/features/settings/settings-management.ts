@@ -50,6 +50,7 @@ export class SettingsManagement implements OnInit {
   // Available options
   tierOptions = [
     { value: 'free', label: 'Free' },
+    { value: 'basic', label: 'Basic' },
     { value: 'premium', label: 'Premium' },
     { value: 'premium_plus', label: 'Premium Plus' }
   ];
@@ -343,6 +344,8 @@ export class SettingsManagement implements OnInit {
         return '#8b5cf6';
       case 'premium':
         return '#3b82f6';
+      case 'basic':
+        return '#0f766e';
       case 'free':
       default:
         return '#6b7280';
