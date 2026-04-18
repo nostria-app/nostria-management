@@ -7,9 +7,9 @@ import {
   BackupJobResponse, CreateBackupJobRequest, VapidKey,
   NotificationRequest, NotificationResult, NotificationStatus,
   CreatePaymentRequest, Payment, UserSettingsUpdate, UserSettingsResponse,
-  UsersByReleaseChannel, ServiceStatus, HealthStatus, PushSubscription,
+  ServiceStatus, HealthStatus, PushSubscription,
   NotificationData, DevicesResponse, UserSettingsRequest, UserSettings,
-  AdminSetUserSettingsRequest, ReleaseChannelUpdateRequest, ReleaseChannel,
+  AdminSetUserSettingsRequest, GrokAdminConfig,
   // NIP-98 Auth Types
   Nip98AuthOptions
 } from '../../shared/models/api.models';
@@ -299,10 +299,6 @@ export class ApiService {
     });
   }
 
-  async getUsersByReleaseChannel(channel: 'stable' | 'beta' | 'alpha'): Promise<ApiResponse<UsersByReleaseChannel>> {
-    return this.makeRequest<UsersByReleaseChannel>(`/settings/admin/release-channel/${channel}`);
-  }
-
   // Extended Settings API
   async adminSetUserSettings(request: AdminSetUserSettingsRequest): Promise<ApiResponse<{ success: boolean, message: string }>> {
     return this.makeRequest<{ success: boolean, message: string }>('/settings/admin/set-user-settings', {
@@ -311,14 +307,14 @@ export class ApiService {
     });
   }
 
-  async getReleaseChannels(): Promise<ApiResponse<ReleaseChannel[]>> {
-    return this.makeRequest<ReleaseChannel[]>('/settings/release-channels');
+  async getGrokAdminConfig(): Promise<ApiResponse<GrokAdminConfig>> {
+    return this.makeAuthenticatedRequest<GrokAdminConfig>('/grok/admin/config');
   }
 
-  async updateReleaseChannel(request: ReleaseChannelUpdateRequest): Promise<ApiResponse<{ success: boolean, message: string }>> {
-    return this.makeRequest<{ success: boolean, message: string }>('/settings/release-channel', {
-      method: 'POST',
-      body: request
+  async updateGrokAdminConfig(config: GrokAdminConfig): Promise<ApiResponse<GrokAdminConfig>> {
+    return this.makeAuthenticatedRequest<GrokAdminConfig>('/grok/admin/config', {
+      method: 'PUT',
+      body: config,
     });
   }
 

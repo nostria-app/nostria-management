@@ -1,7 +1,151 @@
 <div class="settings-management">
   <div class="header">
     <h1>Settings Management</h1>
-    <p>Manage user settings, subscription tiers, and release channels</p>
+    <p>Manage user settings, subscription tiers, and hosted Grok configuration</p>
+  </div>
+
+  <div class="section admin-section">
+    <h2>Admin: Grok Configuration</h2>
+    <p class="admin-warning">Configure Nostria-hosted Grok quotas, pricing guardrails, and top-up limits.</p>
+
+    <div class="form-actions">
+      @if (!isAdminAuthConnected()) {
+        <button type="button" class="btn-primary" (click)="connectAdminAuth()">Connect Nostr Extension</button>
+      } @else {
+        <span class="channel-badge">Connected as {{ formatPubkey(getAdminAuthPubkey() || '') }}</span>
+        <button type="button" class="btn-secondary" (click)="disconnectAdminAuth()">Disconnect</button>
+      }
+      <button type="button" class="btn-secondary" (click)="loadGrokConfig()" [disabled]="grokConfigLoading()">Load Grok Config</button>
+    </div>
+
+    @if (grokConfigError()) {
+      <div class="error">
+        <span class="icon">❌</span>
+        {{ grokConfigError() }}
+      </div>
+    }
+
+    <form [formGroup]="grokConfigForm" (ngSubmit)="saveGrokConfig()" class="settings-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>
+            <input type="checkbox" formControlName="enabled" />
+            Enable hosted Grok
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" formControlName="allowResponses" />
+            Allow text responses
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" formControlName="allowImages" />
+            Allow image generation
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" formControlName="allowServerSideTools" />
+            Allow xAI server-side tools
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="grokResponseSafetyMargin">Response safety margin (%)</label>
+          <input id="grokResponseSafetyMargin" type="number" formControlName="responseSafetyMarginPercent" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokResponseModel">Default response model</label>
+          <input id="grokResponseModel" type="text" formControlName="responseModel" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokImageModel">Default image model</label>
+          <input id="grokImageModel" type="text" formControlName="imageModel" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokMinTopup">Minimum top-up (cents)</label>
+          <input id="grokMinTopup" type="number" formControlName="minimumCents" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokMaxTopup">Maximum top-up (cents)</label>
+          <input id="grokMaxTopup" type="number" formControlName="maximumCents" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokTopupOptions">Default top-up buttons (comma separated cents)</label>
+          <input id="grokTopupOptions" type="text" formControlName="defaultOptionsCents" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokTopupRate">Credit nanos USD per cent</label>
+          <input id="grokTopupRate" type="number" formControlName="nanosUsdPerCent" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokBasicImages">Basic included images / month</label>
+          <input id="grokBasicImages" type="number" formControlName="basicIncludedImagesPerMonth" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokPremiumImages">Premium included images / month</label>
+          <input id="grokPremiumImages" type="number" formControlName="premiumIncludedImagesPerMonth" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokPremiumPlusImages">Premium+ included images / month</label>
+          <input id="grokPremiumPlusImages" type="number" formControlName="premiumPlusIncludedImagesPerMonth" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="grokPremiumPlusDaily">Premium+ daily image limit</label>
+          <input id="grokPremiumPlusDaily" type="number" formControlName="premiumPlusDailyImageLimit" class="form-control" />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="grokResponsePricing">Response pricing JSON</label>
+          <textarea id="grokResponsePricing" formControlName="responsePricingJson" class="form-control" rows="14"></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="grokImagePricing">Image pricing JSON</label>
+          <textarea id="grokImagePricing" formControlName="imagePricingJson" class="form-control" rows="10"></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" [disabled]="grokConfigForm.invalid || isSavingGrokConfig()">
+          @if (isSavingGrokConfig()) {
+            Saving Grok Config...
+          } @else {
+            Save Grok Config
+          }
+        </button>
+        <button type="button" class="btn-secondary" (click)="resetForm('grok')">Reset Form</button>
+      </div>
+    </form>
+
+    @if (grokConfigSaveError()) {
+      <div class="error">
+        <span class="icon">❌</span>
+        {{ grokConfigSaveError() }}
+      </div>
+    }
+
+    @if (grokConfigSaveSuccess()) {
+      <div class="success">
+        <span class="icon">✅</span>
+        Grok configuration updated successfully.
+      </div>
+    }
   </div>
 
   <!-- Get User Settings Section -->
@@ -68,13 +212,6 @@
               <label>Subscription Tier:</label>
               <span class="tier-badge" [style.color]="getTierBadgeColor(settings.tier)">
                 {{ settings.tier | titlecase }}
-              </span>
-            </div>
-
-            <div class="setting-item">
-              <label>Release Channel:</label>
-              <span class="channel-badge" [style.color]="getChannelBadgeColor(settings.releaseChannel)">
-                {{ settings.releaseChannel | titlecase }}
               </span>
             </div>
 
@@ -412,119 +549,4 @@
     }
   </div>
 
-  <!-- Release Channel Management Section -->
-  <div class="section">
-    <h2>Release Channel Management</h2>
-    
-    <div class="subsection">
-      <h3>Current Release Channels</h3>
-      @if (channelsLoading()) {
-        <div class="loading">Loading release channels...</div>
-      } @else if (channelsError()) {
-        <div class="error">
-          <span class="icon">⚠️</span>
-          {{ channelsError() }}
-          <button class="btn-secondary" (click)="loadReleaseChannels()">Retry</button>
-        </div>
-      } @else if (releaseChannels().length === 0) {
-        <div class="empty-state">
-          <span class="icon">📊</span>
-          <p>No release channel data available</p>
-        </div>
-      } @else {
-        <div class="channels-grid">
-          @for (channel of releaseChannels(); track channel.channel) {
-            <div class="channel-card">
-              <div class="channel-header">
-                <span class="channel-name" [style.color]="getChannelBadgeColor(channel.channel)">
-                  {{ channel.channel | titlecase }}
-                </span>
-                <span class="user-count">{{ channel.userCount }} users</span>
-              </div>
-              <div class="channel-users">
-                @if (channel.users.length > 0) {
-                  <p>Sample users:</p>
-                  <div class="user-list">
-                    @for (user of channel.users.slice(0, 3); track user) {
-                      <code class="user-pubkey">{{ formatPubkey(user) }}</code>
-                    }
-                    @if (channel.users.length > 3) {
-                      <span class="more-users">+{{ channel.users.length - 3 }} more</span>
-                    }
-                  </div>
-                } @else {
-                  <p class="no-users">No users in this channel</p>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
-        <div class="channels-actions">
-          <button (click)="loadReleaseChannels()" class="btn-secondary">Refresh</button>
-          <button (click)="exportReleaseChannels()" class="btn-secondary">Export</button>
-        </div>
-      }
-    </div>
-
-    <div class="subsection">
-      <h3>Update User Release Channel</h3>
-      <form [formGroup]="releaseChannelForm" (ngSubmit)="updateReleaseChannel()" class="settings-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="channelPubkey">Public Key</label>
-            <input
-              id="channelPubkey"
-              type="text"
-              formControlName="pubkey"
-              class="form-control"
-              placeholder="Enter user public key"
-              maxlength="64"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="releaseChannel">Release Channel</label>
-            <select id="releaseChannel" formControlName="releaseChannel" class="form-control">
-              @for (channel of channelOptions; track channel.value) {
-                <option [value]="channel.value">{{ channel.label }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button
-            type="submit"
-            [disabled]="releaseChannelForm.invalid || isUpdatingChannel()"
-            class="btn-primary"
-          >
-            @if (isUpdatingChannel()) {
-              Updating Channel...
-            } @else {
-              Update Release Channel
-            }
-          </button>
-          
-          <button type="button" (click)="resetForm('channel')" class="btn-secondary">
-            Reset Form
-          </button>
-        </div>
-      </form>
-
-      @if (updateChannelError()) {
-        <div class="error">
-          <span class="icon">❌</span>
-          {{ updateChannelError() }}
-        </div>
-      }
-
-      @if (updateChannelSuccess()) {
-        <div class="success">
-          <span class="icon">✅</span>
-          Release channel updated successfully!
-        </div>
-      }
-    </div>
-  </div>
 </div>

@@ -254,9 +254,56 @@ export interface UserSettings {
   nip05?: string;
   lud16?: string;
   website?: string;
-  releaseChannel: 'stable' | 'beta' | 'alpha' | 'dev';
   created: number;
   updated: number;
+}
+
+export interface GrokResponseModelConfig {
+  enabled: boolean;
+  inputTokenNanosUsd: number;
+  outputTokenNanosUsd: number;
+}
+
+export interface GrokImageModelConfig {
+  enabled: boolean;
+  imageNanosUsd: number;
+  includedQuotaEligible: boolean;
+}
+
+export interface GrokAdminConfig {
+  enabled: boolean;
+  allowResponses: boolean;
+  allowImages: boolean;
+  allowServerSideTools: boolean;
+  guardrails: {
+    responseSafetyMarginPercent: number;
+  };
+  defaults: {
+    responseModel: string;
+    imageModel: string;
+  };
+  topUp: {
+    minimumCents: number;
+    maximumCents: number;
+    defaultOptionsCents: number[];
+    nanosUsdPerCent: number;
+  };
+  quotas: {
+    basic: {
+      includedImagesPerMonth: number;
+    };
+    premium: {
+      includedImagesPerMonth: number;
+    };
+    premiumPlus: {
+      includedImagesPerMonth: number;
+      dailyImageLimit: number;
+    };
+  };
+  pricing: {
+    responses: Record<string, GrokResponseModelConfig>;
+    images: Record<string, GrokImageModelConfig>;
+  };
 }
 
 export interface AdminSetUserSettingsRequest {
@@ -272,38 +319,15 @@ export interface AdminSetUserSettingsRequest {
   website?: string;
 }
 
-export interface ReleaseChannelUpdateRequest {
-  pubkey: string;
-  releaseChannel: 'stable' | 'beta' | 'alpha' | 'dev';
-}
-
-export interface ReleaseChannel {
-  channel: string;
-  userCount: number;
-  users: string[];
-}
-
 export interface UserSettingsUpdate {
-  releaseChannel?: 'stable' | 'beta' | 'alpha';
   socialSharing?: boolean;
 }
 
 export interface UserSettingsResponse {
   pubkey: string;
-  releaseChannel: 'stable' | 'beta' | 'alpha';
   socialSharing: boolean;
   created: number;
   updated: number;
-}
-
-export interface UsersByReleaseChannel {
-  success: boolean;
-  message: string;
-  data: {
-    releaseChannel: string;
-    userCount: number;
-    users: string[];
-  };
 }
 
 // Status & Health

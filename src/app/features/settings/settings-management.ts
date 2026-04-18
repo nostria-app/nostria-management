@@ -5,8 +5,81 @@ import { ApiService } from '../../core/services/api.service';
 import { UtilsService } from '../../shared/utils/utils.service';
 import {
   UserSettingsRequest, UserSettings, AdminSetUserSettingsRequest,
-  ReleaseChannelUpdateRequest, ReleaseChannel
+  GrokAdminConfig
 } from '../../shared/models/api.models';
+
+const DEFAULT_GROK_ADMIN_CONFIG: GrokAdminConfig = {
+  enabled: true,
+  allowResponses: true,
+  allowImages: true,
+  allowServerSideTools: false,
+  guardrails: {
+    responseSafetyMarginPercent: 25,
+  },
+  defaults: {
+    responseModel: 'grok-4-1-fast-reasoning',
+    imageModel: 'grok-imagine-image',
+  },
+  topUp: {
+    minimumCents: 100,
+    maximumCents: 50000,
+    defaultOptionsCents: [500, 1000, 2500],
+    nanosUsdPerCent: 10000000,
+  },
+  quotas: {
+    basic: {
+      includedImagesPerMonth: 5,
+    },
+    premium: {
+      includedImagesPerMonth: 10,
+    },
+    premiumPlus: {
+      includedImagesPerMonth: 30,
+      dailyImageLimit: 5,
+    },
+  },
+  pricing: {
+    responses: {
+      'grok-4.20-0309-reasoning': {
+        enabled: true,
+        inputTokenNanosUsd: 2000,
+        outputTokenNanosUsd: 6000,
+      },
+      'grok-4.20-0309-non-reasoning': {
+        enabled: true,
+        inputTokenNanosUsd: 2000,
+        outputTokenNanosUsd: 6000,
+      },
+      'grok-4.20-multi-agent-0309': {
+        enabled: true,
+        inputTokenNanosUsd: 2000,
+        outputTokenNanosUsd: 6000,
+      },
+      'grok-4-1-fast-reasoning': {
+        enabled: true,
+        inputTokenNanosUsd: 200,
+        outputTokenNanosUsd: 500,
+      },
+      'grok-4-1-fast-non-reasoning': {
+        enabled: true,
+        inputTokenNanosUsd: 200,
+        outputTokenNanosUsd: 500,
+      },
+    },
+    images: {
+      'grok-imagine-image': {
+        enabled: true,
+        imageNanosUsd: 20000000,
+        includedQuotaEligible: true,
+      },
+      'grok-imagine-image-pro': {
+        enabled: true,
+        imageNanosUsd: 70000000,
+        includedQuotaEligible: false,
+      },
+    },
+  },
+};
 
 @Component({
   selector: 'app-settings-management',
@@ -28,13 +101,12 @@ export class SettingsManagement implements OnInit {
   updateSettingsError = signal<string | null>(null);
   updateSettingsSuccess = signal(false);
 
-  releaseChannels = signal<ReleaseChannel[]>([]);
-  channelsLoading = signal(false);
-  channelsError = signal<string | null>(null);
-
-  isUpdatingChannel = signal(false);
-  updateChannelError = signal<string | null>(null);
-  updateChannelSuccess = signal(false);
+  grokConfig = signal<GrokAdminConfig | null>(null);
+  grokConfigLoading = signal(false);
+  grokConfigError = signal<string | null>(null);
+  grokConfigSaveError = signal<string | null>(null);
+  grokConfigSaveSuccess = signal(false);
+  isSavingGrokConfig = signal(false);
 
   // Admin functions
   isAdminOperation = signal(false);
@@ -44,8 +116,8 @@ export class SettingsManagement implements OnInit {
   // Forms
   settingsForm: FormGroup;
   adminSettingsForm: FormGroup;
-  releaseChannelForm: FormGroup;
   getUserSettingsForm: FormGroup;
+  grokConfigForm: FormGroup;
 
   // Available options
   tierOptions = [
@@ -53,13 +125,6 @@ export class SettingsManagement implements OnInit {
     { value: 'basic', label: 'Basic' },
     { value: 'premium', label: 'Premium' },
     { value: 'premium_plus', label: 'Premium Plus' }
-  ];
-
-  channelOptions = [
-    { value: 'stable', label: 'Stable' },
-    { value: 'beta', label: 'Beta' },
-    { value: 'alpha', label: 'Alpha' },
-    { value: 'dev', label: 'Development' }
   ];
 
   constructor(private apiService: ApiService) {
@@ -88,18 +153,32 @@ export class SettingsManagement implements OnInit {
       website: ['', [Validators.pattern(/^https?:\/\/.+/)]]
     });
 
-    this.releaseChannelForm = this.fb.group({
-      pubkey: ['', [Validators.required, Validators.pattern(/^[a-fA-F0-9]{64}$/)]],
-      releaseChannel: ['stable', [Validators.required]]
-    });
-
     this.getUserSettingsForm = this.fb.group({
       pubkey: ['', [Validators.required, Validators.pattern(/^[a-fA-F0-9]{64}$/)]]
+    });
+
+    this.grokConfigForm = this.fb.group({
+      enabled: [true],
+      allowResponses: [true],
+      allowImages: [true],
+      allowServerSideTools: [false],
+      responseSafetyMarginPercent: [25, [Validators.required, Validators.min(0), Validators.max(500)]],
+      responseModel: ['grok-4-1-fast-reasoning', [Validators.required]],
+      imageModel: ['grok-imagine-image', [Validators.required]],
+      minimumCents: [100, [Validators.required, Validators.min(1)]],
+      maximumCents: [50000, [Validators.required, Validators.min(1)]],
+      defaultOptionsCents: ['500, 1000, 2500', [Validators.required]],
+      nanosUsdPerCent: [10000000, [Validators.required, Validators.min(1)]],
+      basicIncludedImagesPerMonth: [5, [Validators.required, Validators.min(0)]],
+      premiumIncludedImagesPerMonth: [10, [Validators.required, Validators.min(0)]],
+      premiumPlusIncludedImagesPerMonth: [30, [Validators.required, Validators.min(0)]],
+      premiumPlusDailyImageLimit: [5, [Validators.required, Validators.min(1)]],
+      responsePricingJson: ['', [Validators.required]],
+      imagePricingJson: ['', [Validators.required]],
     });
   }
 
   ngOnInit() {
-    this.loadReleaseChannels();
   }
 
   async loadUserSettings() {
@@ -212,49 +291,66 @@ export class SettingsManagement implements OnInit {
     }
   }
 
-  async loadReleaseChannels() {
-    this.channelsLoading.set(true);
-    this.channelsError.set(null);
-
+  async connectAdminAuth(): Promise<void> {
     try {
-      const response = await this.apiService.getReleaseChannels();
-      if (response.success && response.data) {
-        this.releaseChannels.set(response.data);
-      } else {
-        this.channelsError.set(response.message || 'Failed to load release channels');
-      }
+      await this.apiService.connectNostrExtension();
+      this.grokConfigError.set(null);
     } catch (error) {
-      this.channelsError.set('Network error loading release channels');
-    } finally {
-      this.channelsLoading.set(false);
+      this.grokConfigError.set(error instanceof Error ? error.message : 'Failed to connect to Nostr extension');
     }
   }
 
-  async updateReleaseChannel() {
-    if (this.releaseChannelForm.invalid) return;
+  disconnectAdminAuth(): void {
+    this.apiService.disconnectNostrExtension();
+  }
 
-    this.isUpdatingChannel.set(true);
-    this.updateChannelError.set(null);
-    this.updateChannelSuccess.set(false);
+  async loadGrokConfig(): Promise<void> {
+    this.grokConfigLoading.set(true);
+    this.grokConfigError.set(null);
 
     try {
-      const formValue = this.releaseChannelForm.value;
-      const request: ReleaseChannelUpdateRequest = {
-        pubkey: formValue.pubkey,
-        releaseChannel: formValue.releaseChannel
-      };
-
-      const response = await this.apiService.updateReleaseChannel(request);
-      if (response.success) {
-        this.updateChannelSuccess.set(true);
-        this.loadReleaseChannels();
-      } else {
-        this.updateChannelError.set(response.message || 'Failed to update release channel');
+      const response = await this.apiService.getGrokAdminConfig();
+      if (!response.success || !response.data) {
+        this.grokConfigError.set(response.message || 'Failed to load Grok configuration');
+        return;
       }
+
+      const config = this.normalizeGrokConfig(response.data);
+      this.grokConfig.set(config);
+      this.patchGrokConfigForm(config);
     } catch (error) {
-      this.updateChannelError.set('Network error updating release channel');
+      this.grokConfigError.set(error instanceof Error ? error.message : 'Failed to load Grok configuration');
     } finally {
-      this.isUpdatingChannel.set(false);
+      this.grokConfigLoading.set(false);
+    }
+  }
+
+  async saveGrokConfig(): Promise<void> {
+    if (this.grokConfigForm.invalid) {
+      this.grokConfigSaveError.set('Please correct the Grok configuration form first.');
+      return;
+    }
+
+    this.isSavingGrokConfig.set(true);
+    this.grokConfigSaveError.set(null);
+    this.grokConfigSaveSuccess.set(false);
+
+    try {
+      const request = this.buildGrokConfigRequest();
+      const response = await this.apiService.updateGrokAdminConfig(request);
+      if (!response.success || !response.data) {
+        this.grokConfigSaveError.set(response.message || 'Failed to save Grok configuration');
+        return;
+      }
+
+      const config = this.normalizeGrokConfig(response.data);
+      this.grokConfig.set(config);
+      this.patchGrokConfigForm(config);
+      this.grokConfigSaveSuccess.set(true);
+    } catch (error) {
+      this.grokConfigSaveError.set(error instanceof Error ? error.message : 'Failed to save Grok configuration');
+    } finally {
+      this.isSavingGrokConfig.set(false);
     }
   }
 
@@ -275,8 +371,8 @@ export class SettingsManagement implements OnInit {
     this.updateSettingsError.set(null);
     this.adminSuccess.set(false);
     this.adminError.set(null);
-    this.updateChannelSuccess.set(false);
-    this.updateChannelError.set(null);
+    this.grokConfigSaveSuccess.set(false);
+    this.grokConfigSaveError.set(null);
   }
 
   exportSettings() {
@@ -288,15 +384,6 @@ export class SettingsManagement implements OnInit {
         'application/json'
       );
     }
-  }
-
-  exportReleaseChannels() {
-    const channels = this.releaseChannels();
-    this.utils.downloadAsFile(
-      channels,
-      `release-channels-${Date.now()}.json`,
-      'application/json'
-    );
   }
 
   resetForm(formName: string) {
@@ -314,18 +401,27 @@ export class SettingsManagement implements OnInit {
           tier: 'free'
         });
         break;
-      case 'channel':
-        this.releaseChannelForm.reset({
-          pubkey: '',
-          releaseChannel: 'stable'
-        });
-        break;
       case 'getUser':
         this.getUserSettingsForm.reset();
         this.currentSettings.set(null);
         break;
+      case 'grok':
+        if (this.grokConfig()) {
+          this.patchGrokConfigForm(this.grokConfig()!);
+        }
+        this.grokConfigSaveError.set(null);
+        this.grokConfigSaveSuccess.set(false);
+        break;
     }
     this.clearResults();
+  }
+
+  isAdminAuthConnected(): boolean {
+    return this.apiService.getNostrAuthState().isAuthenticated;
+  }
+
+  getAdminAuthPubkey(): string | null {
+    return this.apiService.getNostrAuthState().pubkey || null;
   }
 
   isValidUrl(url?: string): boolean {
@@ -352,17 +448,113 @@ export class SettingsManagement implements OnInit {
     }
   }
 
-  getChannelBadgeColor(channel: string): string {
-    switch (channel) {
-      case 'dev':
-        return '#ef4444';
-      case 'alpha':
-        return '#f59e0b';
-      case 'beta':
-        return '#3b82f6';
-      case 'stable':
-      default:
-        return '#10b981';
-    }
+  private normalizeGrokConfig(config: Partial<GrokAdminConfig> | null | undefined): GrokAdminConfig {
+    const pricing = config?.pricing;
+
+    return {
+      enabled: config?.enabled ?? DEFAULT_GROK_ADMIN_CONFIG.enabled,
+      allowResponses: config?.allowResponses ?? DEFAULT_GROK_ADMIN_CONFIG.allowResponses,
+      allowImages: config?.allowImages ?? DEFAULT_GROK_ADMIN_CONFIG.allowImages,
+      allowServerSideTools: config?.allowServerSideTools ?? DEFAULT_GROK_ADMIN_CONFIG.allowServerSideTools,
+      guardrails: {
+        responseSafetyMarginPercent: config?.guardrails?.responseSafetyMarginPercent ?? DEFAULT_GROK_ADMIN_CONFIG.guardrails.responseSafetyMarginPercent,
+      },
+      defaults: {
+        responseModel: config?.defaults?.responseModel ?? DEFAULT_GROK_ADMIN_CONFIG.defaults.responseModel,
+        imageModel: config?.defaults?.imageModel ?? DEFAULT_GROK_ADMIN_CONFIG.defaults.imageModel,
+      },
+      topUp: {
+        minimumCents: config?.topUp?.minimumCents ?? DEFAULT_GROK_ADMIN_CONFIG.topUp.minimumCents,
+        maximumCents: config?.topUp?.maximumCents ?? DEFAULT_GROK_ADMIN_CONFIG.topUp.maximumCents,
+        defaultOptionsCents: config?.topUp?.defaultOptionsCents?.length
+          ? [...config.topUp.defaultOptionsCents]
+          : [...DEFAULT_GROK_ADMIN_CONFIG.topUp.defaultOptionsCents],
+        nanosUsdPerCent: config?.topUp?.nanosUsdPerCent ?? DEFAULT_GROK_ADMIN_CONFIG.topUp.nanosUsdPerCent,
+      },
+      quotas: {
+        basic: {
+          includedImagesPerMonth: config?.quotas?.basic?.includedImagesPerMonth ?? DEFAULT_GROK_ADMIN_CONFIG.quotas.basic.includedImagesPerMonth,
+        },
+        premium: {
+          includedImagesPerMonth: config?.quotas?.premium?.includedImagesPerMonth ?? DEFAULT_GROK_ADMIN_CONFIG.quotas.premium.includedImagesPerMonth,
+        },
+        premiumPlus: {
+          includedImagesPerMonth: config?.quotas?.premiumPlus?.includedImagesPerMonth ?? DEFAULT_GROK_ADMIN_CONFIG.quotas.premiumPlus.includedImagesPerMonth,
+          dailyImageLimit: config?.quotas?.premiumPlus?.dailyImageLimit ?? DEFAULT_GROK_ADMIN_CONFIG.quotas.premiumPlus.dailyImageLimit,
+        },
+      },
+      pricing: {
+        responses: pricing?.responses ? { ...DEFAULT_GROK_ADMIN_CONFIG.pricing.responses, ...pricing.responses } : { ...DEFAULT_GROK_ADMIN_CONFIG.pricing.responses },
+        images: pricing?.images ? { ...DEFAULT_GROK_ADMIN_CONFIG.pricing.images, ...pricing.images } : { ...DEFAULT_GROK_ADMIN_CONFIG.pricing.images },
+      },
+    };
+  }
+
+  private patchGrokConfigForm(config: GrokAdminConfig): void {
+    this.grokConfigForm.patchValue({
+      enabled: config.enabled,
+      allowResponses: config.allowResponses,
+      allowImages: config.allowImages,
+      allowServerSideTools: config.allowServerSideTools,
+      responseSafetyMarginPercent: config.guardrails.responseSafetyMarginPercent,
+      responseModel: config.defaults.responseModel,
+      imageModel: config.defaults.imageModel,
+      minimumCents: config.topUp.minimumCents,
+      maximumCents: config.topUp.maximumCents,
+      defaultOptionsCents: config.topUp.defaultOptionsCents.join(', '),
+      nanosUsdPerCent: config.topUp.nanosUsdPerCent,
+      basicIncludedImagesPerMonth: config.quotas.basic.includedImagesPerMonth,
+      premiumIncludedImagesPerMonth: config.quotas.premium.includedImagesPerMonth,
+      premiumPlusIncludedImagesPerMonth: config.quotas.premiumPlus.includedImagesPerMonth,
+      premiumPlusDailyImageLimit: config.quotas.premiumPlus.dailyImageLimit,
+      responsePricingJson: JSON.stringify(config.pricing.responses, null, 2),
+      imagePricingJson: JSON.stringify(config.pricing.images, null, 2),
+    });
+  }
+
+  private buildGrokConfigRequest(): GrokAdminConfig {
+    const formValue = this.grokConfigForm.getRawValue();
+    const responsePricing = JSON.parse(formValue.responsePricingJson) as GrokAdminConfig['pricing']['responses'];
+    const imagePricing = JSON.parse(formValue.imagePricingJson) as GrokAdminConfig['pricing']['images'];
+    const defaultOptionsCents = String(formValue.defaultOptionsCents)
+      .split(',')
+      .map((value: string) => Number.parseInt(value.trim(), 10))
+      .filter((value: number) => Number.isFinite(value) && value > 0);
+
+    return {
+      enabled: !!formValue.enabled,
+      allowResponses: !!formValue.allowResponses,
+      allowImages: !!formValue.allowImages,
+      allowServerSideTools: !!formValue.allowServerSideTools,
+      guardrails: {
+        responseSafetyMarginPercent: Number(formValue.responseSafetyMarginPercent),
+      },
+      defaults: {
+        responseModel: String(formValue.responseModel).trim(),
+        imageModel: String(formValue.imageModel).trim(),
+      },
+      topUp: {
+        minimumCents: Number(formValue.minimumCents),
+        maximumCents: Number(formValue.maximumCents),
+        defaultOptionsCents,
+        nanosUsdPerCent: Number(formValue.nanosUsdPerCent),
+      },
+      quotas: {
+        basic: {
+          includedImagesPerMonth: Number(formValue.basicIncludedImagesPerMonth),
+        },
+        premium: {
+          includedImagesPerMonth: Number(formValue.premiumIncludedImagesPerMonth),
+        },
+        premiumPlus: {
+          includedImagesPerMonth: Number(formValue.premiumPlusIncludedImagesPerMonth),
+          dailyImageLimit: Number(formValue.premiumPlusDailyImageLimit),
+        },
+      },
+      pricing: {
+        responses: responsePricing,
+        images: imagePricing,
+      },
+    };
   }
 }
