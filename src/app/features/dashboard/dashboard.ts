@@ -1,8 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
 import { ApiService } from '../../core/services/api.service';
-import { Customer, Server } from '../../shared/models/api.models';
+import { InvestorAccessService } from '../../core/services/investor-access.service';
+import {
+  InvestorAdminDashboardResponse,
+  InvestorDashboardResponse,
+  ServiceStatus
+} from '../../shared/models/api.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,54 +17,88 @@ import { Customer, Server } from '../../shared/models/api.models';
   styleUrl: './dashboard.scss'
 })
 export class Dashboard implements OnInit {
-  protected readonly customerCount = signal(0);
-  protected readonly activeCustomers = signal(0);
-  protected readonly serverCount = signal(0);
-  protected readonly runningServers = signal(0);
-  protected readonly isLoading = signal(true);
+  protected readonly access = inject(InvestorAccessService);
+  private readonly apiService = inject(ApiService);
+
+  protected readonly isLoading = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly Math = Math;
+  protected readonly adminDashboard = signal<InvestorAdminDashboardResponse | null>(null);
+  protected readonly investorDashboard = signal<InvestorDashboardResponse | null>(null);
+  protected readonly serviceStatus = signal<ServiceStatus | null>(null);
 
-  constructor(private apiService: ApiService) {}
+  async ngOnInit(): Promise<void> {
+    if (!this.access.session()) {
+      await this.access.refreshSession();
+    }
 
-  async ngOnInit() {
-    await this.loadDashboardData();
+    await this.refreshData();
   }
 
-  private async loadDashboardData() {
-    this.isLoading.set(true);
+  protected async signIn(): Promise<void> {
+    await this.access.login();
+    await this.refreshData();
+  }
+
+  protected async refreshData(): Promise<void> {
     this.error.set(null);
 
+    if (!this.access.hasPortalAccess()) {
+      return;
+    }
+
+    this.isLoading.set(true);
+
     try {
-      const [customersResponse, serversResponse] = await Promise.all([
-        this.apiService.getCustomers(),
-        this.apiService.getServers()
-      ]);
+      if (this.access.isAdmin()) {
+        const [statusResponse, investorResponse] = await Promise.all([
+          this.apiService.getServiceStatus(),
+          this.apiService.getInvestorAdminDashboard()
+        ]);
 
-      if (customersResponse.success && customersResponse.data) {
-        const customers = customersResponse.data;
-        this.customerCount.set(customers.length);
-        this.activeCustomers.set(customers.filter((c: Customer) => c.status === 'active').length);
-      } else {
-        this.error.set(customersResponse.message || 'Failed to load customers');
-      }
+        if (statusResponse.success && statusResponse.data) {
+          this.serviceStatus.set(statusResponse.data);
+        }
 
-      if (serversResponse.success && serversResponse.data) {
-        const servers = serversResponse.data;
-        this.serverCount.set(servers.length);
-        this.runningServers.set(servers.filter((s: Server) => s.status === 'running').length);
+        if (!investorResponse.success || !investorResponse.data) {
+          throw new Error(investorResponse.message || 'Failed to load investor dashboard');
+        }
+
+        this.adminDashboard.set(investorResponse.data);
+        this.investorDashboard.set(null);
       } else {
-        this.error.set(serversResponse.message || 'Failed to load servers');
+        const response = await this.apiService.getInvestorDashboard();
+        if (!response.success || !response.data) {
+          throw new Error(response.message || 'Failed to load investor dashboard');
+        }
+
+        this.investorDashboard.set(response.data);
+        this.adminDashboard.set(null);
       }
     } catch (error) {
-      this.error.set('Failed to load dashboard data');
-      console.error('Dashboard error:', error);
+      this.error.set(error instanceof Error ? error.message : 'Failed to load dashboard');
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  protected async refreshData() {
-    await this.loadDashboardData();
+  protected formatMoney(cents?: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format((cents || 0) / 100);
+  }
+
+  protected formatPercent(basisPoints?: number): string {
+    return `${((basisPoints || 0) / 100).toFixed(2)}%`;
+  }
+
+  protected formatUptime(seconds?: number): string {
+    if (!seconds) {
+      return 'Unknown';
+    }
+
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
   }
 }

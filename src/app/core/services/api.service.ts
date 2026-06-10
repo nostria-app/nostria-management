@@ -10,6 +10,9 @@ import {
   ServiceStatus, HealthStatus, PushSubscription,
   NotificationData, DevicesResponse, UserSettingsRequest, UserSettings,
   AdminSetUserSettingsRequest, GrokAdminConfig,
+  Investor, InvestorAdminDashboardResponse, InvestorDashboardResponse, InvestorInput,
+  InvestorPayout, InvestorSession, CalculateRevenueShareRequest,
+  CalculateRevenueShareResponse, PayInvestorPayoutRequest, RevenueSharePeriod,
   // NIP-98 Auth Types
   Nip98AuthOptions
 } from '../../shared/models/api.models';
@@ -257,6 +260,61 @@ export class ApiService {
 
   async getPayment(pubkey: string, paymentId: string): Promise<ApiResponse<Payment>> {
     return this.makeRequest<Payment>(`/payment/${pubkey}/${paymentId}`);
+  }
+
+  // Investor Management API
+  async getInvestorSession(): Promise<ApiResponse<InvestorSession>> {
+    return this.makeAuthenticatedRequest<InvestorSession>('/investors/session');
+  }
+
+  async getInvestorDashboard(): Promise<ApiResponse<InvestorDashboardResponse>> {
+    return this.makeAuthenticatedRequest<InvestorDashboardResponse>('/investors/me/dashboard');
+  }
+
+  async getInvestorAdminDashboard(): Promise<ApiResponse<InvestorAdminDashboardResponse>> {
+    return this.makeAuthenticatedRequest<InvestorAdminDashboardResponse>('/investors/admin/dashboard');
+  }
+
+  async listInvestors(): Promise<ApiResponse<Investor[]>> {
+    return this.makeAuthenticatedRequest<Investor[]>('/investors/admin/investors');
+  }
+
+  async createInvestor(request: InvestorInput): Promise<ApiResponse<Investor>> {
+    return this.makeAuthenticatedRequest<Investor>('/investors/admin/investors', {
+      method: 'POST',
+      body: request
+    });
+  }
+
+  async updateInvestor(pubkey: string, request: Partial<InvestorInput>): Promise<ApiResponse<Investor>> {
+    return this.makeAuthenticatedRequest<Investor>(`/investors/admin/investors/${pubkey}`, {
+      method: 'PUT',
+      body: request
+    });
+  }
+
+  async deleteInvestor(pubkey: string): Promise<ApiResponse<{ success: boolean }>> {
+    return this.makeAuthenticatedRequest<{ success: boolean }>(`/investors/admin/investors/${pubkey}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async listRevenueSharePeriods(limit = 24): Promise<ApiResponse<RevenueSharePeriod[]>> {
+    return this.makeAuthenticatedRequest<RevenueSharePeriod[]>(`/investors/admin/periods?limit=${limit}`);
+  }
+
+  async calculateRevenueShare(request: CalculateRevenueShareRequest): Promise<ApiResponse<CalculateRevenueShareResponse>> {
+    return this.makeAuthenticatedRequest<CalculateRevenueShareResponse>('/investors/admin/periods/calculate', {
+      method: 'POST',
+      body: request
+    });
+  }
+
+  async payInvestorPayout(payoutId: string, request: PayInvestorPayoutRequest): Promise<ApiResponse<InvestorPayout>> {
+    return this.makeAuthenticatedRequest<InvestorPayout>(`/investors/admin/payouts/${payoutId}/pay`, {
+      method: 'POST',
+      body: request
+    });
   }
 
   // Settings Management API

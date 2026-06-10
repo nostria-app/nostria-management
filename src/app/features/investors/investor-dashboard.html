@@ -1,0 +1,309 @@
+<section class="investors-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Revenue sharing</p>
+      <h2>
+        @if (access.isAdmin()) {
+          Investor Administration
+        } @else {
+          Investor Dashboard
+        }
+      </h2>
+    </div>
+
+    <div class="heading-actions">
+      @if (access.hasPortalAccess()) {
+        <button type="button" class="secondary-button" (click)="load()" [disabled]="isLoading()">Refresh</button>
+      } @else {
+        <button type="button" class="primary-button" (click)="signIn()" [disabled]="access.isLoading()">Sign in</button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert danger">{{ error() }}</div>
+  }
+
+  @if (success()) {
+    <div class="alert success">{{ success() }}</div>
+  }
+
+  @if (!access.hasPortalAccess()) {
+    <div class="empty-panel">
+      <h3>Sign in with your Nostr extension</h3>
+      <p>The portal will show either administration tools or investor reporting based on the signed pubkey.</p>
+    </div>
+  } @else if (isLoading()) {
+    <div class="empty-panel">
+      <h3>Loading investor data</h3>
+      <p>Fetching revenue sharing, payouts, and account access.</p>
+    </div>
+  } @else if (access.isAdmin() && adminDashboard(); as admin) {
+    <div class="metric-grid">
+      <div class="metric-card">
+        <span>Active investors</span>
+        <strong>{{ admin.totals.activeInvestorCount }} / {{ admin.totals.investorCount }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Total invested</span>
+        <strong>{{ formatMoney(admin.totals.totalInvestmentCents) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Allocated ownership</span>
+        <strong>{{ formatPercent(admin.totals.totalShareBasisPoints) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Current month pool</span>
+        <strong>{{ formatMoney(admin.totals.currentMonthInvestorPoolCents) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Pending payouts</span>
+        <strong>{{ formatMoney(admin.totals.pendingPayoutsCents) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Paid payouts</span>
+        <strong>{{ formatMoney(admin.totals.paidPayoutsCents) }}</strong>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <section class="panel">
+        <div class="panel-heading">
+          <h3>{{ editingPubkey() ? 'Edit investor' : 'Add investor' }}</h3>
+          @if (editingPubkey()) {
+            <button type="button" class="text-button" (click)="clearInvestorForm()">Cancel edit</button>
+          }
+        </div>
+
+        <form [formGroup]="investorForm" (ngSubmit)="saveInvestor()" class="form-grid">
+          <label>
+            Pubkey or npub
+            <input type="text" formControlName="pubkey" [readonly]="!!editingPubkey()" />
+          </label>
+
+          <label>
+            Display name
+            <input type="text" formControlName="displayName" />
+          </label>
+
+          <label>
+            Investment size
+            <input type="number" min="0" step="0.01" formControlName="investmentDollars" />
+          </label>
+
+          <label>
+            Ownership percentage
+            <input type="number" min="0" max="100" step="0.01" formControlName="sharePercentage" />
+          </label>
+
+          <label>
+            Lightning address
+            <input type="text" formControlName="lightningAddress" />
+          </label>
+
+          <label>
+            Status
+            <select formControlName="status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-button" [disabled]="savingInvestor()">
+              {{ editingPubkey() ? 'Save investor' : 'Add investor' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h3>Monthly revenue share</h3>
+        </div>
+
+        <form [formGroup]="periodForm" (ngSubmit)="calculateRevenueShare()" class="form-grid compact">
+          <label>
+            Period
+            <input type="month" formControlName="period" />
+          </label>
+
+          <label>
+            Revenue share
+            <input type="number" min="0" max="100" step="0.01" formControlName="revenueSharePercentage" />
+          </label>
+
+          <label class="wide">
+            Notes
+            <input type="text" formControlName="notes" />
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-button" [disabled]="calculatingPeriod()">Calculate payouts</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Investors</h3>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Investor</th>
+              <th>Investment</th>
+              <th>Ownership</th>
+              <th>Lightning</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (investor of admin.investors; track investor.pubkey) {
+              <tr>
+                <td>
+                  <div class="primary-cell">{{ investor.displayName || shortPubkey(investor.pubkey) }}</div>
+                  <code>{{ investor.npub || shortPubkey(investor.pubkey) }}</code>
+                </td>
+                <td>{{ formatMoney(investor.investmentCents) }}</td>
+                <td>{{ formatPercent(investor.shareBasisPoints) }}</td>
+                <td>{{ investor.lightningAddress || 'Not set' }}</td>
+                <td><span class="status-pill" [class.inactive]="investor.status === 'inactive'">{{ investor.status }}</span></td>
+                <td class="row-actions">
+                  <button type="button" class="secondary-button" (click)="editInvestor(investor)">Edit</button>
+                  <button type="button" class="danger-button" (click)="deleteInvestor(investor)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Payouts</h3>
+      </div>
+
+      <div class="payout-list">
+        @for (payout of admin.recentPayouts; track payout.id) {
+          <article class="payout-card" [class.paid]="payout.status === 'paid'" [class.failed]="payout.status === 'failed'">
+            <div>
+              <div class="payout-title">
+                <strong>{{ payout.investor?.displayName || shortPubkey(payout.investorPubkey) }}</strong>
+                <span>{{ payout.period?.period || 'No period' }}</span>
+              </div>
+              <div class="payout-meta">
+                {{ formatMoney(payout.amountCents) }} · {{ formatPercent(payout.shareBasisPoints) }} ownership · {{ payout.status }}
+              </div>
+              @if (payout.errorMessage) {
+                <div class="inline-error">{{ payout.errorMessage }}</div>
+              }
+            </div>
+
+            @if (payout.status !== 'paid') {
+              <div class="pay-form">
+                <input type="text" [(ngModel)]="payoutInvoices[payout.id]" [ngModelOptions]="{ standalone: true }" placeholder="Lightning invoice" />
+                <input type="number" [(ngModel)]="payoutAmountsSat[payout.id]" [ngModelOptions]="{ standalone: true }" placeholder="Sats" />
+                <button type="button" class="primary-button" (click)="payPayout(payout)" [disabled]="payingPayoutId() === payout.id">
+                  Pay
+                </button>
+              </div>
+            } @else {
+              <div class="paid-detail">Paid {{ formatDate(payout.paid) }}</div>
+            }
+          </article>
+        } @empty {
+          <div class="empty-inline">No payouts calculated yet.</div>
+        }
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Revenue history</h3>
+      </div>
+      <div class="history-grid">
+        @for (item of admin.revenueHistory; track item.period) {
+          <div class="history-item">
+            <span>{{ item.period }}</span>
+            <strong>{{ formatMoney(item.grossRevenueCents) }}</strong>
+            <small>{{ formatMoney(item.investorPoolCents) }} pool · {{ item.status }}</small>
+          </div>
+        }
+      </div>
+    </section>
+  } @else if (investorDashboard(); as dashboard) {
+    <div class="metric-grid investor">
+      <div class="metric-card">
+        <span>Total payouts received</span>
+        <strong>{{ formatMoney(dashboard.totals.paidPayoutsCents) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Expected monthly payout</span>
+        <strong>{{ formatMoney(dashboard.totals.expectedMonthlyPayoutCents) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Ownership</span>
+        <strong>{{ formatPercent(dashboard.investmentStats.shareBasisPoints) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Investment</span>
+        <strong>{{ formatMoney(dashboard.investmentStats.investmentCents) }}</strong>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Revenue history</h3>
+      </div>
+      <div class="history-grid">
+        @for (item of dashboard.revenueHistory; track item.period) {
+          <div class="history-item">
+            <span>{{ item.period }}</span>
+            <strong>{{ formatMoney(item.investorPayoutCents) }}</strong>
+            <small>{{ formatMoney(item.grossRevenueCents) }} revenue · {{ item.status }}</small>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Payout history</h3>
+      </div>
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Paid</th>
+              <th>Payment hash</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payout of dashboard.payouts; track payout.id) {
+              <tr>
+                <td>{{ payout.period?.period || 'No period' }}</td>
+                <td>{{ formatMoney(payout.amountCents) }}</td>
+                <td><span class="status-pill" [class.inactive]="payout.status !== 'paid'">{{ payout.status }}</span></td>
+                <td>{{ formatDate(payout.paid) }}</td>
+                <td><code>{{ payout.lnPaymentHash || 'Not available' }}</code></td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">No payout history yet.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</section>
