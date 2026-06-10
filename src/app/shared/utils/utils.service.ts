@@ -4,14 +4,16 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class UtilsService {
+  private normalizeTimestamp(timestamp: number): number {
+    return timestamp < 10_000_000_000 ? timestamp * 1000 : timestamp;
+  }
 
   /**
    * Format timestamp to human-readable date string
    */
   formatDate(timestamp?: number): string {
     if (!timestamp) return 'N/A';
-    // API returns timestamps in milliseconds, so use directly
-    return new Date(timestamp).toLocaleString();
+    return new Date(this.normalizeTimestamp(timestamp)).toLocaleString();
   }
 
   /**
@@ -21,8 +23,7 @@ export class UtilsService {
     if (!timestamp) return 'N/A';
     
     const now = Date.now();
-    // API returns timestamps in milliseconds, so use directly
-    const time = timestamp;
+    const time = this.normalizeTimestamp(timestamp);
     const diffMs = now - time;
     
     const seconds = Math.floor(diffMs / 1000);
@@ -263,8 +264,7 @@ export class UtilsService {
    */
   isExpired(timestamp?: number): boolean {
     if (!timestamp) return false;
-    // API returns timestamps in milliseconds, so compare directly
-    return timestamp <= Date.now();
+    return this.normalizeTimestamp(timestamp) <= Date.now();
   }
 
   /**
@@ -273,8 +273,7 @@ export class UtilsService {
   getTimeUntilExpiration(timestamp?: number): string {
     if (!timestamp) return 'Never';
     const now = Date.now();
-    // API returns timestamps in milliseconds, so use directly
-    const expiration = timestamp;
+    const expiration = this.normalizeTimestamp(timestamp);
     
     if (expiration <= now) return 'Expired';
     

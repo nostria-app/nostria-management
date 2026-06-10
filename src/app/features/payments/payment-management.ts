@@ -385,10 +385,10 @@ export class PaymentManagement implements OnInit {
   }
 
   formatTimestamp(timestamp: number): string {
-    return new Date(timestamp * 1000).toLocaleString();
+    return this.utils.formatDate(timestamp);
   }
 
   isTimestampExpired(timestamp: number): boolean {
-    return timestamp * 1000 < Date.now();
+    return this.utils.isExpired(timestamp);
   }
 }
