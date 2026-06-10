@@ -29,101 +29,6 @@
   }
 }
 
-// Subscription Tiers
-.tiers-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.tier-card {
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 20px;
-  background: #f9f9f9;
-  transition: all 0.3s ease;
-
-  &.premium {
-    border-color: #007bff;
-    background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  h3 {
-    margin-top: 0;
-    color: #333;
-    font-size: 1.4em;
-  }
-
-  .tier-type {
-    display: inline-block;
-    padding: 4px 12px;
-    background: #007bff;
-    color: white;
-    border-radius: 20px;
-    font-size: 0.8em;
-    text-transform: uppercase;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-
-  .pricing {
-    margin: 15px 0;
-
-    .price {
-      margin: 5px 0;
-
-      .amount {
-        font-size: 1.8em;
-        font-weight: bold;
-        color: #007bff;
-      }
-
-      .period {
-        font-size: 0.9em;
-        color: #666;
-        margin-left: 5px;
-      }
-
-      &.annual .amount {
-        color: #28a745;
-      }
-    }
-  }
-
-  .features {
-    margin-top: 15px;
-
-    p {
-      margin: 10px 0;
-      font-weight: 600;
-      color: #333;
-    }
-
-    .feature-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .feature-tag {
-      display: inline-block;
-      padding: 4px 8px;
-      background: #e9ecef;
-      border-radius: 12px;
-      font-size: 0.8em;
-      color: #495057;
-      border: 1px solid #dee2e6;
-    }
-  }
-}
-
 // Forms
 .form-group {
   margin-bottom: 20px;
@@ -318,10 +223,6 @@
 @media (max-width: 768px) {
   .account-management {
     padding: 10px;
-
-    .tiers-grid {
-      grid-template-columns: 1fr;
-    }
 
     .lookup-form {
       flex-direction: column;

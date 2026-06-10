@@ -1,48 +1,5 @@
 <div class="account-management">
   <h1>Account Management</h1>
-  
-  <!-- Subscription Tiers Section -->
-  <section class="tiers-section">
-    <h2>Subscription Tiers</h2>
-    <div class="tiers-grid">
-      @for (tier of tiersArray(); track tier.tier) {
-        <div class="tier-card" [class.premium]="tier.tier !== 'free'">
-          <h3>{{ tier.name }}</h3>
-          <div class="tier-info">
-            <span class="tier-type">{{ tier.tier }}</span>
-            <div class="pricing">
-              @if (tier.pricing?.monthly; as monthlyPrice) {
-                <div class="price">
-                  <span class="amount">${{ formatPrice(monthlyPrice.priceCents) }}</span>
-                  <span class="period">/month</span>
-                </div>
-              }
-              @if (tier.pricing?.yearly; as yearlyPrice) {
-                <div class="price annual">
-                  <span class="amount">${{ formatPrice(yearlyPrice.priceCents) }}</span>
-                  <span class="period">/year</span>
-                </div>
-              }
-            </div>
-            <div class="features">
-              <p><strong>Notifications per day:</strong> {{ tier.entitlements.notificationsPerDay }}</p>
-              <div class="feature-list">
-                @for (feature of tier.entitlements.features; track feature.key) {
-                  <span class="feature-tag">{{ feature.label }}</span>
-                }
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-    </div>
-    @if (tiersLoading()) {
-      <div class="loading">Loading subscription tiers...</div>
-    }
-    @if (tiersError()) {
-      <div class="error">Error loading tiers: {{ tiersError() }}</div>
-    }
-  </section>
 
   <!-- Account Creation Section -->
   <section class="account-creation">

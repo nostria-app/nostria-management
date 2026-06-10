@@ -5,7 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { Nip98AuthService } from '../../core/services/nip98-auth.service';
 import { NostrExtensionService } from '../../core/services/nostr-extension.service';
 import { 
-  TierDetails, Account, AddAccountRequest, UpdateAccountRequest 
+  Account, AddAccountRequest, UpdateAccountRequest 
 } from '../../shared/models/api.models';
 
 type AccountListResponse = {
@@ -33,10 +33,6 @@ export class AccountManagement implements OnInit {
   private fb = new FormBuilder();
 
   // Signals for reactive state management
-  tiers = signal<Record<string, TierDetails> | null>(null);
-  tiersLoading = signal(false);
-  tiersError = signal<string | null>(null);
-  
   currentAccount = signal<Account | null>(null);
   
   isCreatingAccount = signal(false);
@@ -69,9 +65,6 @@ export class AccountManagement implements OnInit {
   // Check if Nostr extension is available
   isNostrExtensionAvailable = false;
 
-  // Computed signal for tiers array
-  tiersArray = signal<TierDetails[]>([]);
-
   // Reactive forms
   createAccountForm: FormGroup;
   updateAccountForm: FormGroup;
@@ -98,7 +91,6 @@ export class AccountManagement implements OnInit {
   }
 
   ngOnInit() {
-    this.loadTiers();
     this.loadCurrentAccount();
     this.checkNostrExtension();
   }
@@ -182,25 +174,6 @@ export class AccountManagement implements OnInit {
       }
     ];
     this.listedAccounts.set(mockAccounts);
-  }
-
-  async loadTiers() {
-    this.tiersLoading.set(true);
-    this.tiersError.set(null);
-    
-    try {
-      const response = await this.apiService.getTiers();
-      if (response.success && response.data) {
-        this.tiers.set(response.data);
-        this.tiersArray.set(Object.values(response.data));
-      } else {
-        this.tiersError.set(response.message || 'Failed to load tiers');
-      }
-    } catch (error) {
-      this.tiersError.set('Network error loading tiers');
-    } finally {
-      this.tiersLoading.set(false);
-    }
   }
 
   async loadCurrentAccount() {
@@ -312,10 +285,6 @@ export class AccountManagement implements OnInit {
     if (!timestamp) return 'N/A';
     // API returns timestamps in milliseconds, so use directly
     return new Date(timestamp).toLocaleString();
-  }
-
-  formatPrice(priceCents: number): string {
-    return (priceCents / 100).toFixed(2);
   }
 
   // Nostr Extension Methods
