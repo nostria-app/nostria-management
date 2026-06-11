@@ -49,6 +49,10 @@
         <strong>{{ formatMoney(admin.totals.totalInvestmentCents) }}</strong>
       </div>
       <div class="metric-card">
+        <span>Revenue since beginning</span>
+        <strong>{{ formatSatsWithUsdEstimate(admin.platformStats.payments.paidSubscriptionRevenueSat) }}</strong>
+      </div>
+      <div class="metric-card">
         <span>Allocated ownership</span>
         <strong>{{ formatPercent(admin.totals.totalSharePartsPerMillion) }}</strong>
       </div>

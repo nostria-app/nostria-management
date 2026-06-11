@@ -48,6 +48,10 @@
   } @else if (access.isAdmin() && adminDashboard(); as admin) {
     <div class="metric-grid">
       <div class="metric-card">
+        <span>Revenue since beginning</span>
+        <strong>{{ formatSatsWithUsdEstimate(admin.platformStats.payments.paidSubscriptionRevenueSat) }}</strong>
+      </div>
+      <div class="metric-card">
         <span>Current month revenue</span>
         <strong>{{ formatSatsWithUsdEstimate(admin.totals.currentMonthRevenueSat) }}</strong>
       </div>
@@ -79,7 +83,7 @@
           <h3>Revenue history</h3>
         </div>
         <div class="history-list">
-          @for (item of admin.revenueHistory.slice(0, 6); track item.period) {
+          @for (item of admin.revenueHistory; track item.period) {
             <div class="history-row">
               <span>{{ item.period }}</span>
               <strong>{{ formatSatsWithUsdEstimate(item.grossRevenueSat) }}</strong>
