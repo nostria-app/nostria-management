@@ -108,7 +108,7 @@ export class InvestorDashboard implements OnInit {
       pubkey: investor.pubkey,
       displayName: investor.displayName || '',
       investmentDollars: investor.investmentCents / 100,
-      sharePercentage: investor.shareBasisPoints / 100,
+      sharePercentage: investor.sharePartsPerMillion / 10000,
       lightningAddress: investor.lightningAddress || '',
       status: investor.status
     });
@@ -138,11 +138,13 @@ export class InvestorDashboard implements OnInit {
 
     try {
       const value = this.investorForm.getRawValue();
+      const sharePartsPerMillion = Math.round(Number(value.sharePercentage || 0) * 10000);
       const input: InvestorInput = {
         pubkey: value.pubkey || '',
         displayName: value.displayName || undefined,
         investmentCents: Math.round(Number(value.investmentDollars || 0) * 100),
-        shareBasisPoints: Math.round(Number(value.sharePercentage || 0) * 100),
+        shareBasisPoints: Math.round(sharePartsPerMillion / 100),
+        sharePartsPerMillion,
         lightningAddress: value.lightningAddress || undefined,
         status: value.status === 'inactive' ? 'inactive' : 'active'
       };
@@ -254,8 +256,8 @@ export class InvestorDashboard implements OnInit {
     }).format((cents || 0) / 100);
   }
 
-  protected formatPercent(basisPoints?: number): string {
-    return `${((basisPoints || 0) / 100).toFixed(2)}%`;
+  protected formatPercent(partsPerMillion?: number): string {
+    return `${((partsPerMillion || 0) / 10000).toFixed(4)}%`;
   }
 
   protected formatDate(timestamp?: number): string {

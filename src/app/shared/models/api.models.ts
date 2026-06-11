@@ -244,6 +244,7 @@ export interface Investor {
   displayName?: string;
   investmentCents: number;
   shareBasisPoints: number;
+  sharePartsPerMillion: number;
   lightningAddress?: string;
   status: InvestorStatus;
   created: number;
@@ -256,6 +257,7 @@ export interface InvestorInput {
   displayName?: string;
   investmentCents?: number;
   shareBasisPoints?: number;
+  sharePartsPerMillion?: number;
   lightningAddress?: string;
   status?: InvestorStatus;
 }
@@ -277,6 +279,7 @@ export interface InvestorPayout {
   investorPubkey: string;
   periodId: string;
   shareBasisPoints: number;
+  sharePartsPerMillion: number;
   revenueCents: number;
   amountCents: number;
   amountSat?: number;
@@ -312,6 +315,7 @@ export interface InvestorDashboardResponse {
   investmentStats: {
     investmentCents: number;
     shareBasisPoints: number;
+    sharePartsPerMillion: number;
     ownershipPercentage: number;
     payoutMultiple: number;
   };
@@ -325,6 +329,7 @@ export interface InvestorAdminDashboardResponse {
     activeInvestorCount: number;
     totalInvestmentCents: number;
     totalShareBasisPoints: number;
+    totalSharePartsPerMillion: number;
     currentMonthRevenueCents: number;
     currentMonthInvestorPoolCents: number;
     pendingPayoutsCents: number;

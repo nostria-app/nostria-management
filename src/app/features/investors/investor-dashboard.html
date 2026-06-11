@@ -50,7 +50,7 @@
       </div>
       <div class="metric-card">
         <span>Allocated ownership</span>
-        <strong>{{ formatPercent(admin.totals.totalShareBasisPoints) }}</strong>
+        <strong>{{ formatPercent(admin.totals.totalSharePartsPerMillion) }}</strong>
       </div>
       <div class="metric-card">
         <span>Current month pool</span>
@@ -93,7 +93,7 @@
 
           <label>
             Ownership percentage
-            <input type="number" min="0" max="100" step="0.01" formControlName="sharePercentage" />
+            <input type="number" min="0" max="100" step="0.0001" formControlName="sharePercentage" />
           </label>
 
           <label>
@@ -170,7 +170,7 @@
                   <code>{{ investor.npub || shortPubkey(investor.pubkey) }}</code>
                 </td>
                 <td>{{ formatMoney(investor.investmentCents) }}</td>
-                <td>{{ formatPercent(investor.shareBasisPoints) }}</td>
+                <td>{{ formatPercent(investor.sharePartsPerMillion) }}</td>
                 <td>{{ investor.lightningAddress || 'Not set' }}</td>
                 <td><span class="status-pill" [class.inactive]="investor.status === 'inactive'">{{ investor.status }}</span></td>
                 <td class="row-actions">
@@ -198,7 +198,7 @@
                 <span>{{ payout.period?.period || 'No period' }}</span>
               </div>
               <div class="payout-meta">
-                {{ formatMoney(payout.amountCents) }} · {{ formatPercent(payout.shareBasisPoints) }} ownership · {{ payout.status }}
+                {{ formatMoney(payout.amountCents) }} · {{ formatPercent(payout.sharePartsPerMillion) }} ownership · {{ payout.status }}
               </div>
               @if (payout.errorMessage) {
                 <div class="inline-error">{{ payout.errorMessage }}</div>
@@ -249,7 +249,7 @@
       </div>
       <div class="metric-card">
         <span>Ownership</span>
-        <strong>{{ formatPercent(dashboard.investmentStats.shareBasisPoints) }}</strong>
+        <strong>{{ formatPercent(dashboard.investmentStats.sharePartsPerMillion) }}</strong>
       </div>
       <div class="metric-card">
         <span>Investment</span>

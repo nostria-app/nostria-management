@@ -88,8 +88,8 @@ export class Dashboard implements OnInit {
     }).format((cents || 0) / 100);
   }
 
-  protected formatPercent(basisPoints?: number): string {
-    return `${((basisPoints || 0) / 100).toFixed(2)}%`;
+  protected formatPercent(partsPerMillion?: number): string {
+    return `${((partsPerMillion || 0) / 10000).toFixed(4)}%`;
   }
 
   protected formatUptime(seconds?: number): string {
