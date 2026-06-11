@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
@@ -35,6 +35,19 @@ export class PaymentManagement implements OnInit {
   isListingPayments = signal(false);
   listPaymentsError = signal<string | null>(null);
   listedPayments = signal<Payment[]>([]);
+  hideExpiredUnpaidInvoices = signal(false);
+  filteredListedPayments = computed(() => {
+    const payments = this.listedPayments();
+
+    if (!this.hideExpiredUnpaidInvoices()) {
+      return payments;
+    }
+
+    return payments.filter(payment => !this.isExpiredUnpaidInvoice(payment));
+  });
+  expiredUnpaidInvoiceCount = computed(() =>
+    this.listedPayments().filter(payment => this.isExpiredUnpaidInvoice(payment)).length
+  );
   isNostrConnected = signal(false);
 
   // Payment history (simulated - would come from real API)
@@ -390,5 +403,13 @@ export class PaymentManagement implements OnInit {
 
   isTimestampExpired(timestamp: number): boolean {
     return this.utils.isExpired(timestamp);
+  }
+
+  toggleExpiredUnpaidInvoiceFilter(): void {
+    this.hideExpiredUnpaidInvoices.update(value => !value);
+  }
+
+  private isExpiredUnpaidInvoice(payment: Payment): boolean {
+    return !payment.isPaid && (payment.status === 'expired' || this.utils.isExpired(payment.expires));
   }
 }

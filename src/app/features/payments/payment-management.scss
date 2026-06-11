@@ -629,6 +629,20 @@
     margin-bottom: 1.5rem;
   }
 
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    h3 {
+      margin: 0;
+      color: #1a1a1a;
+      font-size: 1.25rem;
+    }
+  }
+
   .payments-table {
     .table-header {
       background-color: #f9fafb;
@@ -945,10 +959,24 @@
     text-align: center;
     padding: 2rem;
     color: #6b7280;
+
+    &.compact {
+      padding: 1.5rem;
+      border: 1px dashed #d1d5db;
+      border-radius: 8px;
+      background: #f9fafb;
+    }
     
     p {
       margin: 0;
       font-style: italic;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .results-header {
+      align-items: stretch;
+      flex-direction: column;
     }
   }
 }

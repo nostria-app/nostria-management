@@ -345,9 +345,24 @@
     <!-- Listed Payments Results -->
     @if (listedPayments().length > 0) {
       <div class="results">
-        <h3>Authenticated Payment Records ({{ listedPayments().length }} found)</h3>
+        <div class="results-header">
+          <h3>
+            Authenticated Payment Records
+            ({{ filteredListedPayments().length }} shown / {{ listedPayments().length }} found)
+          </h3>
+          @if (expiredUnpaidInvoiceCount() > 0) {
+            <button type="button" class="btn-secondary" (click)="toggleExpiredUnpaidInvoiceFilter()">
+              @if (hideExpiredUnpaidInvoices()) {
+                Show expired unpaid invoices
+              } @else {
+                Hide expired unpaid invoices
+              }
+              ({{ expiredUnpaidInvoiceCount() }})
+            </button>
+          }
+        </div>
         <div class="payments-table-detailed">
-          @for (payment of listedPayments(); track payment.id) {
+          @for (payment of filteredListedPayments(); track payment.id) {
             <div class="payment-card">
               <!-- Header with ID and Status -->
               <div class="payment-header">
@@ -465,6 +480,10 @@
                   📋 Copy ID
                 </button>
               </div>
+            </div>
+          } @empty {
+            <div class="empty-state compact">
+              <p>All listed records are expired unpaid invoices.</p>
             </div>
           }
         </div>
