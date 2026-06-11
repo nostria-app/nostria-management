@@ -101,6 +101,7 @@
   strong {
     font-size: 1.35rem;
     line-height: 1.1;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -327,6 +328,10 @@ table {
   }
 }
 
+.metric-grid > .info-box {
+  grid-column: 1 / -1;
+}
+
 .stats-list {
   display: grid;
   gap: 10px;
@@ -436,6 +441,11 @@ table {
   span,
   small {
     color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    overflow-wrap: anywhere;
   }
 }
 

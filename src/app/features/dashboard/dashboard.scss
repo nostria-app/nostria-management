@@ -153,6 +153,7 @@
   strong {
     font-size: 1.35rem;
     line-height: 1.1;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -189,11 +190,16 @@
 
 .history-row {
   display: grid;
-  grid-template-columns: 90px 1fr minmax(190px, auto);
+  grid-template-columns: 90px minmax(0, 1fr) minmax(190px, auto);
 
   small {
     color: var(--muted);
     text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    overflow-wrap: anywhere;
   }
 }
 
@@ -202,6 +208,10 @@
     display: block;
     color: var(--muted);
     margin-top: 2px;
+  }
+
+  span {
+    overflow-wrap: anywhere;
   }
 }
 

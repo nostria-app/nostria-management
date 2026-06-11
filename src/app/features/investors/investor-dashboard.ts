@@ -6,6 +6,10 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { InvestorAccessService } from '../../core/services/investor-access.service';
 import {
+  PaymentProcessorPrice,
+  PaymentProcessorService
+} from '../../core/services/payment-processor.service';
+import {
   Investor,
   InvestorAdminDashboardResponse,
   InvestorDashboardResponse,
@@ -23,6 +27,7 @@ import {
 export class InvestorDashboard implements OnInit {
   protected readonly access = inject(InvestorAccessService);
   private readonly apiService = inject(ApiService);
+  private readonly paymentProcessor = inject(PaymentProcessorService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly isLoading = signal(false);
@@ -30,6 +35,7 @@ export class InvestorDashboard implements OnInit {
   protected readonly success = signal<string | null>(null);
   protected readonly adminDashboard = signal<InvestorAdminDashboardResponse | null>(null);
   protected readonly investorDashboard = signal<InvestorDashboardResponse | null>(null);
+  protected readonly btcPrice = signal<PaymentProcessorPrice | null>(null);
   protected readonly editingInvestorId = signal<string | null>(null);
   protected readonly savingInvestor = signal(false);
   protected readonly calculatingPeriod = signal(false);
@@ -91,10 +97,23 @@ export class InvestorDashboard implements OnInit {
         this.investorDashboard.set(response.data);
         this.adminDashboard.set(null);
       }
+
+      await this.loadBtcPrice();
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'Failed to load investors');
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  private async loadBtcPrice(): Promise<void> {
+    try {
+      const price = await this.paymentProcessor.getPrice({
+        baseUrl: this.paymentProcessor.defaultBaseUrl
+      });
+      this.btcPrice.set(price);
+    } catch {
+      this.btcPrice.set(null);
     }
   }
 
@@ -258,6 +277,37 @@ export class InvestorDashboard implements OnInit {
       style: 'currency',
       currency: 'USD'
     }).format((cents || 0) / 100);
+  }
+
+  protected formatSats(sats?: number | null): string {
+    return `${this.formatNumber(sats || 0)} sats`;
+  }
+
+  protected formatSatsWithUsdEstimate(sats?: number | null): string {
+    const satsLabel = this.formatSats(sats);
+    const usdEstimate = this.formatUsdEstimateForSats(sats);
+
+    return usdEstimate ? `${satsLabel} · ${usdEstimate}` : satsLabel;
+  }
+
+  protected formatPayoutAmount(payout: InvestorPayout): string {
+    if (payout.amountSat !== undefined && payout.amountSat !== null) {
+      return this.formatSatsWithUsdEstimate(payout.amountSat);
+    }
+
+    return 'Sats unavailable';
+  }
+
+  private formatUsdEstimateForSats(sats?: number | null): string {
+    const usd = this.btcPrice()?.usd;
+    if (!usd || !sats) {
+      return '';
+    }
+
+    return `~${new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format((sats / 100_000_000) * usd)}`;
   }
 
   protected formatNumber(value?: number): string {

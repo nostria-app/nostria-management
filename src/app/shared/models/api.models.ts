@@ -301,8 +301,11 @@ export interface InvestorPayout {
 export interface RevenueHistoryItem {
   period: string;
   grossRevenueCents: number;
+  grossRevenueSat: number;
   investorPoolCents: number;
+  investorPoolSat: number;
   investorPayoutCents: number;
+  investorPayoutSat: number;
   status: RevenueSharePeriodStatus | 'estimated';
 }
 
@@ -327,14 +330,21 @@ export interface PlatformStats {
   payments: {
     paidSubscriptionPayments: number;
     paidSubscriptionRevenueCents: number;
+    paidSubscriptionRevenueSat: number;
     averagePaidSubscriptionCents: number;
+    averagePaidSubscriptionSat: number;
     currentMonthRevenueCents: number;
+    currentMonthRevenueSat: number;
     last30DaysRevenueCents: number;
+    last30DaysRevenueSat: number;
     last90DaysRevenueCents: number;
+    last90DaysRevenueSat: number;
     last30DaysPayments: number;
     last90DaysPayments: number;
     tierRevenueCents: Record<string, number>;
+    tierRevenueSat: Record<string, number>;
     billingCycleRevenueCents: Record<string, number>;
+    billingCycleRevenueSat: Record<string, number>;
     billingCyclePaymentCounts: Record<string, number>;
   };
 }
@@ -343,9 +353,13 @@ export interface InvestorDashboardResponse {
   investor: Investor;
   totals: {
     paidPayoutsCents: number;
+    paidPayoutsSat: number;
     pendingPayoutsCents: number;
+    pendingPayoutsSat: number;
     lifetimePayoutsCents: number;
+    lifetimePayoutsSat: number;
     expectedMonthlyPayoutCents: number;
+    expectedMonthlyPayoutSat: number;
   };
   investmentStats: {
     investmentCents: number;
@@ -366,9 +380,13 @@ export interface InvestorAdminDashboardResponse {
     totalShareBasisPoints: number;
     totalSharePartsPerMillion: number;
     currentMonthRevenueCents: number;
+    currentMonthRevenueSat: number;
     currentMonthInvestorPoolCents: number;
+    currentMonthInvestorPoolSat: number;
     pendingPayoutsCents: number;
+    pendingPayoutsSat: number;
     paidPayoutsCents: number;
+    paidPayoutsSat: number;
   };
   investors: Investor[];
   platformStats: PlatformStats;

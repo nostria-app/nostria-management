@@ -54,15 +54,15 @@
       </div>
       <div class="metric-card">
         <span>Current month pool</span>
-        <strong>{{ formatMoney(admin.totals.currentMonthInvestorPoolCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(admin.totals.currentMonthInvestorPoolSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Pending payouts</span>
-        <strong>{{ formatMoney(admin.totals.pendingPayoutsCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(admin.totals.pendingPayoutsSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Paid payouts</span>
-        <strong>{{ formatMoney(admin.totals.paidPayoutsCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(admin.totals.paidPayoutsSat) }}</strong>
       </div>
     </div>
 
@@ -77,7 +77,8 @@
           Active subscriptions include every account with current premium access. Not every active subscription is paid:
           official Nostria accounts and some long-time supporters may receive free renewals or manual extensions.
           Revenue figures only include completed paid subscription payments, so free renewals are not counted as
-          investor revenue.
+          investor revenue. Bitcoin amounts are shown in sats first; any dollar value is an estimate using the
+          current exchange rate.
         </p>
       </div>
 
@@ -107,7 +108,7 @@
         </div>
         <div class="metric-card">
           <span>Revenue, 30 days</span>
-          <strong>{{ formatMoney(admin.platformStats.payments.last30DaysRevenueCents) }}</strong>
+          <strong>{{ formatSatsWithUsdEstimate(admin.platformStats.payments.last30DaysRevenueSat) }}</strong>
           <small>{{ formatNumber(admin.platformStats.payments.last30DaysPayments) }} payments</small>
         </div>
       </div>
@@ -129,8 +130,8 @@
         </div>
         <div class="stats-list">
           <h4>Revenue by tier</h4>
-          @for (item of statEntries(admin.platformStats.payments.tierRevenueCents); track item.label) {
-            <div><span>{{ item.label }}</span><strong>{{ formatMoney(item.value) }}</strong></div>
+          @for (item of statEntries(admin.platformStats.payments.tierRevenueSat); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatSatsWithUsdEstimate(item.value) }}</strong></div>
           }
         </div>
       </div>
@@ -273,7 +274,7 @@
                 <span>{{ payout.period?.period || 'No period' }}</span>
               </div>
               <div class="payout-meta">
-                {{ formatMoney(payout.amountCents) }} · {{ formatPercent(payout.sharePartsPerMillion) }} ownership · {{ payout.status }}
+                {{ formatPayoutAmount(payout) }} · {{ formatPercent(payout.sharePartsPerMillion) }} ownership · {{ payout.status }}
               </div>
               @if (payout.errorMessage) {
                 <div class="inline-error">{{ payout.errorMessage }}</div>
@@ -306,8 +307,8 @@
         @for (item of admin.revenueHistory; track item.period) {
           <div class="history-item">
             <span>{{ item.period }}</span>
-            <strong>{{ formatMoney(item.grossRevenueCents) }}</strong>
-            <small>{{ formatMoney(item.investorPoolCents) }} pool · {{ item.status }}</small>
+            <strong>{{ formatSatsWithUsdEstimate(item.grossRevenueSat) }}</strong>
+            <small>{{ formatSatsWithUsdEstimate(item.investorPoolSat) }} pool · {{ item.status }}</small>
           </div>
         }
       </div>
@@ -316,11 +317,11 @@
     <div class="metric-grid investor">
       <div class="metric-card">
         <span>Total payouts received</span>
-        <strong>{{ formatMoney(dashboard.totals.paidPayoutsCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(dashboard.totals.paidPayoutsSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Expected monthly payout</span>
-        <strong>{{ formatMoney(dashboard.totals.expectedMonthlyPayoutCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(dashboard.totals.expectedMonthlyPayoutSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Ownership</span>
@@ -338,6 +339,16 @@
       </div>
 
       <div class="metric-grid stats">
+        <div class="info-box wide">
+          <strong>About these statistics</strong>
+          <p>
+            Active subscriptions include paid accounts with current access, plus free renewals and manual extensions
+            for official Nostria accounts and long-time supporters. Investor revenue only counts completed paid
+            subscription payments. Amounts are shown in sats first because that is what Nostria receives and pays;
+            dollar values are only current-rate estimates.
+          </p>
+        </div>
+
         <div class="metric-card">
           <span>Total accounts</span>
           <strong>{{ formatNumber(dashboard.platformStats.accounts.total) }}</strong>
@@ -363,17 +374,17 @@
         </div>
         <div class="metric-card">
           <span>Revenue, 30 days</span>
-          <strong>{{ formatMoney(dashboard.platformStats.payments.last30DaysRevenueCents) }}</strong>
+          <strong>{{ formatSatsWithUsdEstimate(dashboard.platformStats.payments.last30DaysRevenueSat) }}</strong>
           <small>{{ formatNumber(dashboard.platformStats.payments.last30DaysPayments) }} payments</small>
         </div>
         <div class="metric-card">
           <span>Revenue, 90 days</span>
-          <strong>{{ formatMoney(dashboard.platformStats.payments.last90DaysRevenueCents) }}</strong>
+          <strong>{{ formatSatsWithUsdEstimate(dashboard.platformStats.payments.last90DaysRevenueSat) }}</strong>
           <small>{{ formatNumber(dashboard.platformStats.payments.last90DaysPayments) }} payments</small>
         </div>
         <div class="metric-card">
           <span>Average paid subscription</span>
-          <strong>{{ formatMoney(dashboard.platformStats.payments.averagePaidSubscriptionCents) }}</strong>
+          <strong>{{ formatSatsWithUsdEstimate(dashboard.platformStats.payments.averagePaidSubscriptionSat) }}</strong>
         </div>
       </div>
 
@@ -396,8 +407,8 @@
         </div>
         <div class="stats-list">
           <h4>Revenue by billing cycle</h4>
-          @for (item of statEntries(dashboard.platformStats.payments.billingCycleRevenueCents); track item.label) {
-            <div><span>{{ item.label }}</span><strong>{{ formatMoney(item.value) }}</strong></div>
+          @for (item of statEntries(dashboard.platformStats.payments.billingCycleRevenueSat); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatSatsWithUsdEstimate(item.value) }}</strong></div>
           }
         </div>
         <div class="stats-list">
@@ -417,8 +428,8 @@
         @for (item of dashboard.revenueHistory; track item.period) {
           <div class="history-item">
             <span>{{ item.period }}</span>
-            <strong>{{ formatMoney(item.investorPayoutCents) }}</strong>
-            <small>{{ formatMoney(item.grossRevenueCents) }} revenue · {{ item.status }}</small>
+            <strong>{{ formatSatsWithUsdEstimate(item.investorPayoutSat) }}</strong>
+            <small>{{ formatSatsWithUsdEstimate(item.grossRevenueSat) }} revenue · {{ item.status }}</small>
           </div>
         }
       </div>
@@ -443,7 +454,7 @@
             @for (payout of dashboard.payouts; track payout.id) {
               <tr>
                 <td>{{ payout.period?.period || 'No period' }}</td>
-                <td>{{ formatMoney(payout.amountCents) }}</td>
+                <td>{{ formatPayoutAmount(payout) }}</td>
                 <td><span class="status-pill" [class.inactive]="payout.status !== 'paid'">{{ payout.status }}</span></td>
                 <td>{{ formatDate(payout.paid) }}</td>
                 <td><code>{{ payout.lnPaymentHash || 'Not available' }}</code></td>

@@ -49,11 +49,11 @@
     <div class="metric-grid">
       <div class="metric-card">
         <span>Current month revenue</span>
-        <strong>{{ formatMoney(admin.totals.currentMonthRevenueCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(admin.totals.currentMonthRevenueSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Investor pool</span>
-        <strong>{{ formatMoney(admin.totals.currentMonthInvestorPoolCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(admin.totals.currentMonthInvestorPoolSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Active investors</span>
@@ -61,7 +61,7 @@
       </div>
       <div class="metric-card">
         <span>Pending payouts</span>
-        <strong>{{ formatMoney(admin.totals.pendingPayoutsCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(admin.totals.pendingPayoutsSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Allocated ownership</span>
@@ -82,8 +82,8 @@
           @for (item of admin.revenueHistory.slice(0, 6); track item.period) {
             <div class="history-row">
               <span>{{ item.period }}</span>
-              <strong>{{ formatMoney(item.grossRevenueCents) }}</strong>
-              <small>{{ formatMoney(item.investorPoolCents) }} pool · {{ item.status }}</small>
+              <strong>{{ formatSatsWithUsdEstimate(item.grossRevenueSat) }}</strong>
+              <small>{{ formatSatsWithUsdEstimate(item.investorPoolSat) }} pool · {{ item.status }}</small>
             </div>
           }
         </div>
@@ -101,7 +101,7 @@
                 <strong>{{ displayPayoutInvestor(payout) }}</strong>
                 <small>{{ payout.period?.period || 'No period' }} · {{ payout.status }}</small>
               </div>
-              <span>{{ formatMoney(payout.amountCents) }}</span>
+              <span>{{ formatPayoutAmount(payout) }}</span>
             </div>
           } @empty {
             <div class="empty-inline">No payouts calculated yet.</div>
@@ -113,11 +113,11 @@
     <div class="metric-grid investor">
       <div class="metric-card">
         <span>Total payouts received</span>
-        <strong>{{ formatMoney(investor.totals.paidPayoutsCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(investor.totals.paidPayoutsSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Expected monthly payout</span>
-        <strong>{{ formatMoney(investor.totals.expectedMonthlyPayoutCents) }}</strong>
+        <strong>{{ formatSatsWithUsdEstimate(investor.totals.expectedMonthlyPayoutSat) }}</strong>
       </div>
       <div class="metric-card">
         <span>Ownership</span>
@@ -138,8 +138,8 @@
         @for (item of investor.revenueHistory.slice(0, 8); track item.period) {
           <div class="history-row">
             <span>{{ item.period }}</span>
-            <strong>{{ formatMoney(item.investorPayoutCents) }}</strong>
-            <small>{{ formatMoney(item.grossRevenueCents) }} revenue · {{ item.status }}</small>
+            <strong>{{ formatSatsWithUsdEstimate(item.investorPayoutSat) }}</strong>
+            <small>{{ formatSatsWithUsdEstimate(item.grossRevenueSat) }} revenue · {{ item.status }}</small>
           </div>
         }
       </div>
