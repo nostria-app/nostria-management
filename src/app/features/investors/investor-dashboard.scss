@@ -67,6 +67,10 @@
   &.investor {
     grid-template-columns: repeat(4, minmax(170px, 1fr));
   }
+
+  &.stats {
+    grid-template-columns: repeat(4, minmax(170px, 1fr));
+  }
 }
 
 .metric-card,
@@ -87,6 +91,11 @@
   span {
     color: var(--muted);
     font-size: 0.82rem;
+  }
+
+  small {
+    color: var(--muted);
+    font-size: 0.78rem;
   }
 
   strong {
@@ -292,6 +301,38 @@ table {
   }
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stats-list {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+
+  h4 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  span {
+    color: var(--muted);
+  }
+}
+
 .payout-list {
   display: grid;
   gap: 10px;
@@ -381,6 +422,8 @@ table {
 @media (max-width: 1180px) {
   .metric-grid,
   .metric-grid.investor,
+  .metric-grid.stats,
+  .stats-grid,
   .history-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -403,6 +446,8 @@ table {
 
   .metric-grid,
   .metric-grid.investor,
+  .metric-grid.stats,
+  .stats-grid,
   .history-grid,
   .form-grid,
   .form-grid.compact,

@@ -260,8 +260,20 @@ export class InvestorDashboard implements OnInit {
     }).format((cents || 0) / 100);
   }
 
+  protected formatNumber(value?: number): string {
+    return new Intl.NumberFormat('en-US').format(value || 0);
+  }
+
   protected formatPercent(partsPerMillion?: number): string {
     return `${((partsPerMillion || 0) / 10000).toFixed(4)}%`;
+  }
+
+  protected formatRatio(part?: number, total?: number): string {
+    if (!total) {
+      return '0%';
+    }
+
+    return `${(((part || 0) / total) * 100).toFixed(1)}%`;
   }
 
   protected formatDate(timestamp?: number): string {
@@ -287,6 +299,22 @@ export class InvestorDashboard implements OnInit {
     }
 
     return payout.investorId || this.shortValue(payout.investorPubkey) || 'Unknown investor';
+  }
+
+  protected statEntries(record?: Record<string, number>): Array<{ label: string; value: number }> {
+    return Object.entries(record || {})
+      .filter(([, value]) => value > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, value]) => ({
+        label: this.formatStatLabel(label),
+        value,
+      }));
+  }
+
+  protected formatStatLabel(value: string): string {
+    return value
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, character => character.toUpperCase());
   }
 
   protected shortValue(value?: string): string {

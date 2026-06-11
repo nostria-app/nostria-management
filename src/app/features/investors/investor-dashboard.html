@@ -66,6 +66,66 @@
       </div>
     </div>
 
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Platform statistics</h3>
+      </div>
+
+      <div class="metric-grid stats">
+        <div class="metric-card">
+          <span>Total accounts</span>
+          <strong>{{ formatNumber(admin.platformStats.accounts.total) }}</strong>
+        </div>
+        <div class="metric-card">
+          <span>Active subscriptions</span>
+          <strong>{{ formatNumber(admin.platformStats.accounts.activeSubscriptions) }}</strong>
+          <small>{{ formatRatio(admin.platformStats.accounts.activeSubscriptions, admin.platformStats.accounts.paid) }} of paid accounts</small>
+        </div>
+        <div class="metric-card">
+          <span>Expired subscriptions</span>
+          <strong>{{ formatNumber(admin.platformStats.accounts.expiredSubscriptions) }}</strong>
+        </div>
+        <div class="metric-card">
+          <span>Paid accounts</span>
+          <strong>{{ formatNumber(admin.platformStats.accounts.paid) }}</strong>
+          <small>{{ formatNumber(admin.platformStats.accounts.free) }} free</small>
+        </div>
+        <div class="metric-card">
+          <span>New accounts, 30 days</span>
+          <strong>{{ formatNumber(admin.platformStats.accounts.newLast30Days) }}</strong>
+          <small>{{ formatNumber(admin.platformStats.accounts.newLast7Days) }} last 7 days</small>
+        </div>
+        <div class="metric-card">
+          <span>Revenue, 30 days</span>
+          <strong>{{ formatMoney(admin.platformStats.payments.last30DaysRevenueCents) }}</strong>
+          <small>{{ formatNumber(admin.platformStats.payments.last30DaysPayments) }} payments</small>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stats-list">
+          <h4>Active subscriptions by tier</h4>
+          @for (item of statEntries(admin.platformStats.accounts.activeTierCounts); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatNumber(item.value) }}</strong></div>
+          } @empty {
+            <div><span>No active paid subscriptions</span><strong>0</strong></div>
+          }
+        </div>
+        <div class="stats-list">
+          <h4>Accounts by billing cycle</h4>
+          @for (item of statEntries(admin.platformStats.accounts.billingCycleCounts); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatNumber(item.value) }}</strong></div>
+          }
+        </div>
+        <div class="stats-list">
+          <h4>Revenue by tier</h4>
+          @for (item of statEntries(admin.platformStats.payments.tierRevenueCents); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatMoney(item.value) }}</strong></div>
+          }
+        </div>
+      </div>
+    </section>
+
     <div class="admin-grid">
       <section class="panel">
         <div class="panel-heading">
@@ -261,6 +321,83 @@
         <strong>{{ formatMoney(dashboard.investmentStats.investmentCents) }}</strong>
       </div>
     </div>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Platform statistics</h3>
+      </div>
+
+      <div class="metric-grid stats">
+        <div class="metric-card">
+          <span>Total accounts</span>
+          <strong>{{ formatNumber(dashboard.platformStats.accounts.total) }}</strong>
+        </div>
+        <div class="metric-card">
+          <span>Active subscriptions</span>
+          <strong>{{ formatNumber(dashboard.platformStats.accounts.activeSubscriptions) }}</strong>
+          <small>{{ formatRatio(dashboard.platformStats.accounts.activeSubscriptions, dashboard.platformStats.accounts.paid) }} of paid accounts</small>
+        </div>
+        <div class="metric-card">
+          <span>Expired subscriptions</span>
+          <strong>{{ formatNumber(dashboard.platformStats.accounts.expiredSubscriptions) }}</strong>
+        </div>
+        <div class="metric-card">
+          <span>Paid accounts</span>
+          <strong>{{ formatNumber(dashboard.platformStats.accounts.paid) }}</strong>
+          <small>{{ formatNumber(dashboard.platformStats.accounts.free) }} free</small>
+        </div>
+        <div class="metric-card">
+          <span>New accounts, 30 days</span>
+          <strong>{{ formatNumber(dashboard.platformStats.accounts.newLast30Days) }}</strong>
+          <small>{{ formatNumber(dashboard.platformStats.accounts.newLast7Days) }} last 7 days</small>
+        </div>
+        <div class="metric-card">
+          <span>Revenue, 30 days</span>
+          <strong>{{ formatMoney(dashboard.platformStats.payments.last30DaysRevenueCents) }}</strong>
+          <small>{{ formatNumber(dashboard.platformStats.payments.last30DaysPayments) }} payments</small>
+        </div>
+        <div class="metric-card">
+          <span>Revenue, 90 days</span>
+          <strong>{{ formatMoney(dashboard.platformStats.payments.last90DaysRevenueCents) }}</strong>
+          <small>{{ formatNumber(dashboard.platformStats.payments.last90DaysPayments) }} payments</small>
+        </div>
+        <div class="metric-card">
+          <span>Average paid subscription</span>
+          <strong>{{ formatMoney(dashboard.platformStats.payments.averagePaidSubscriptionCents) }}</strong>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stats-list">
+          <h4>Active subscriptions by tier</h4>
+          @for (item of statEntries(dashboard.platformStats.accounts.activeTierCounts); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatNumber(item.value) }}</strong></div>
+          } @empty {
+            <div><span>No active paid subscriptions</span><strong>0</strong></div>
+          }
+        </div>
+        <div class="stats-list">
+          <h4>Expired subscriptions by tier</h4>
+          @for (item of statEntries(dashboard.platformStats.accounts.expiredTierCounts); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatNumber(item.value) }}</strong></div>
+          } @empty {
+            <div><span>No expired paid subscriptions</span><strong>0</strong></div>
+          }
+        </div>
+        <div class="stats-list">
+          <h4>Revenue by billing cycle</h4>
+          @for (item of statEntries(dashboard.platformStats.payments.billingCycleRevenueCents); track item.label) {
+            <div><span>{{ item.label }}</span><strong>{{ formatMoney(item.value) }}</strong></div>
+          }
+        </div>
+        <div class="stats-list">
+          <h4>Recent activity</h4>
+          <div><span>Active last 7 days</span><strong>{{ formatNumber(dashboard.platformStats.accounts.activeLast7Days) }}</strong></div>
+          <div><span>Active last 30 days</span><strong>{{ formatNumber(dashboard.platformStats.accounts.activeLast30Days) }}</strong></div>
+          <div><span>Accounts with usernames</span><strong>{{ formatNumber(dashboard.platformStats.accounts.withUsername) }}</strong></div>
+        </div>
+      </div>
+    </section>
 
     <section class="panel">
       <div class="panel-heading">
