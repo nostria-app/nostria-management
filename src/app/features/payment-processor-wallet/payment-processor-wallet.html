@@ -181,12 +181,13 @@
 
       <div class="transaction-list">
         @for (record of activeTransactions(); track paymentHash(record)) {
-          <article class="transaction-row">
+          <article class="transaction-row" [class.paid]="transactionStatusClass(record) === 'paid'" [class.expired-unpaid]="transactionStatusClass(record) === 'expired-unpaid'" [class.pending]="transactionStatusClass(record) === 'pending'">
             <div>
               <strong>{{ paymentAmount(record) }}</strong>
               <code>{{ paymentHash(record) }}</code>
             </div>
             <div class="transaction-meta">
+              <span class="status-pill" [class]="transactionStatusClass(record)">{{ transactionStatus(record) }}</span>
               <span>{{ record.externalId || record.description || activeList() }}</span>
               @if (paymentFee(record)) {
                 <small>Fee {{ paymentFee(record) }}</small>

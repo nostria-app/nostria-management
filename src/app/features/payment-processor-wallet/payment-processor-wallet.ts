@@ -235,16 +235,45 @@ export class PaymentProcessorWallet implements OnInit {
 
   protected paymentAmount(record: PaymentProcessorRecord): string {
     const amount = this.transactionAmountSat(record);
-    return amount > 0 ? this.formatSatsAndUsd(amount) : 'Unknown amount';
+    if (amount > 0) {
+      return this.formatSatsAndUsd(amount);
+    }
+
+    const requested = this.numberFrom(record, ['requestedSat']);
+    return requested > 0 ? `Requested ${this.formatSatsAndUsd(requested)}` : 'Unknown amount';
   }
 
   protected paymentFee(record: PaymentProcessorRecord): string {
-    const fee = this.numberFrom(record, ['feesSat', 'routingFeeSat']);
+    const fee = this.numberFrom(record, ['feesSat', 'fees', 'routingFeeSat']);
     return fee > 0 ? this.formatSatsAndUsd(fee) : '';
   }
 
   protected paymentDate(record: PaymentProcessorRecord): string {
-    return this.formatDate(record.completedAt || record.createdAt);
+    return this.formatDate(record.completedAt || record.createdAt || record.expiresAt);
+  }
+
+  protected transactionStatus(record: PaymentProcessorRecord): string {
+    if (this.isPaidTransaction(record)) {
+      return 'Paid';
+    }
+
+    if (this.isExpiredUnpaidTransaction(record)) {
+      return 'Expired unpaid';
+    }
+
+    return 'Pending';
+  }
+
+  protected transactionStatusClass(record: PaymentProcessorRecord): string {
+    if (this.isPaidTransaction(record)) {
+      return 'paid';
+    }
+
+    if (this.isExpiredUnpaidTransaction(record)) {
+      return 'expired-unpaid';
+    }
+
+    return 'pending';
   }
 
   protected rawJson(value: unknown): string {
@@ -306,6 +335,31 @@ export class PaymentProcessorWallet implements OnInit {
       'amountSat',
       'amount',
     ]);
+  }
+
+  private isPaidTransaction(record: PaymentProcessorRecord): boolean {
+    return record.isPaid === true
+      || this.numberFrom(record, ['receivedSat', 'sentSat', 'recipientAmountSat']) > 0
+      || Boolean(record.completedAt);
+  }
+
+  private isExpiredUnpaidTransaction(record: PaymentProcessorRecord): boolean {
+    return !this.isPaidTransaction(record)
+      && (record.isExpired === true || this.isPastTimestamp(record.expiresAt));
+  }
+
+  private isPastTimestamp(value: unknown): boolean {
+    if (!value) {
+      return false;
+    }
+
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return false;
+    }
+
+    const milliseconds = numeric > 1_000_000_000_000 ? numeric : numeric * 1000;
+    return milliseconds <= Date.now();
   }
 
   private satsToUsd(sats: number): number | null {

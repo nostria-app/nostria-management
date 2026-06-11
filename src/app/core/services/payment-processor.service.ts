@@ -28,6 +28,7 @@ export interface PaymentProcessorBalance {
 }
 
 export interface PaymentProcessorRecord {
+  subType?: string;
   paymentHash?: string;
   hash?: string;
   preimage?: string;
@@ -35,12 +36,16 @@ export interface PaymentProcessorRecord {
   description?: string;
   invoice?: string;
   isPaid?: boolean;
+  isExpired?: boolean;
+  requestedSat?: number;
   receivedSat?: number;
   amountSat?: number;
   sentSat?: number;
   recipientAmountSat?: number;
   routingFeeSat?: number;
   feesSat?: number;
+  fees?: number;
+  expiresAt?: number;
   completedAt?: number;
   createdAt?: number;
   type?: 'incoming' | 'outgoing';
