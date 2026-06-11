@@ -64,11 +64,13 @@
     <div class="metric-card">
       <span>Wallet balance</span>
       <strong>{{ formatSats(walletBalanceSat()) }}</strong>
+      <small>{{ formatUsdForSats(walletBalanceSat()) }}</small>
     </div>
 
     <div class="metric-card">
       <span>Fee credit</span>
       <strong>{{ formatSats(feeCreditSat()) }}</strong>
+      <small>{{ formatUsdForSats(feeCreditSat()) }}</small>
     </div>
 
     <div class="metric-card">
@@ -132,12 +134,22 @@
     <section class="panel">
       <div class="panel-heading">
         <h3>Transactions</h3>
-        <div class="segmented-control">
-          <button type="button" [class.active]="activeList() === 'incoming'" (click)="setActiveList('incoming')">
-            Incoming
-          </button>
-          <button type="button" [class.active]="activeList() === 'outgoing'" (click)="setActiveList('outgoing')">
-            Outgoing
+        <div class="transaction-actions">
+          <div class="segmented-control">
+            <button type="button" [class.active]="activeList() === 'incoming'" (click)="setActiveList('incoming')">
+              Incoming
+            </button>
+            <button type="button" [class.active]="activeList() === 'outgoing'" (click)="setActiveList('outgoing')">
+              Outgoing
+            </button>
+          </div>
+
+          <button type="button" class="secondary-button" (click)="loadTransactions()" [disabled]="isLoadingTransactions()">
+            @if (isLoadingTransactions()) {
+              Loading
+            } @else {
+              Load transactions
+            }
           </button>
         </div>
       </div>
@@ -151,6 +163,9 @@
             </div>
             <div class="transaction-meta">
               <span>{{ record.externalId || record.description || activeList() }}</span>
+              @if (paymentFee(record)) {
+                <small>Fee {{ paymentFee(record) }}</small>
+              }
               <small>{{ paymentDate(record) }}</small>
             </div>
           </article>

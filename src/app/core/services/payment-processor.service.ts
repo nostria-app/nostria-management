@@ -22,6 +22,7 @@ export interface PaymentProcessorPrice {
 
 export interface PaymentProcessorBalance {
   balanceSat?: number;
+  balance?: number;
   feeCreditSat?: number;
   [key: string]: unknown;
 }
@@ -36,6 +37,9 @@ export interface PaymentProcessorRecord {
   isPaid?: boolean;
   receivedSat?: number;
   amountSat?: number;
+  sentSat?: number;
+  recipientAmountSat?: number;
+  routingFeeSat?: number;
   feesSat?: number;
   completedAt?: number;
   createdAt?: number;
@@ -143,16 +147,46 @@ export class PaymentProcessorService {
   }
 
   private normalizePaymentList(value: unknown, type: 'incoming' | 'outgoing'): PaymentProcessorRecord[] {
-    const records = Array.isArray(value)
-      ? value
-      : value && typeof value === 'object' && Array.isArray((value as { payments?: unknown }).payments)
-        ? (value as { payments: unknown[] }).payments
-        : [];
+    const records = this.extractRecords(value, type);
 
     return records.map(record => ({
       ...(record as PaymentProcessorRecord),
       type,
     }));
+  }
+
+  private extractRecords(value: unknown, type: 'incoming' | 'outgoing'): unknown[] {
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    if (!value || typeof value !== 'object') {
+      return [];
+    }
+
+    const record = value as Record<string, unknown>;
+    const candidateKeys = [
+      'payments',
+      type,
+      `${type}Payments`,
+      'items',
+      'data',
+      'result',
+      'results',
+    ];
+
+    for (const key of candidateKeys) {
+      if (Array.isArray(record[key])) {
+        return record[key] as unknown[];
+      }
+    }
+
+    const objectValues = Object.values(record);
+    if (objectValues.length > 0 && objectValues.every(item => item && typeof item === 'object' && !Array.isArray(item))) {
+      return objectValues;
+    }
+
+    return [];
   }
 
   private url(baseUrl: string, path: string, params: Record<string, string> = {}): string {

@@ -237,6 +237,14 @@ textarea {
   }
 }
 
+.transaction-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .transaction-list {
   display: grid;
   gap: 10px;
@@ -317,7 +325,8 @@ textarea {
 @media (max-width: 720px) {
   .page-heading,
   .panel-heading,
-  .form-actions {
+  .form-actions,
+  .transaction-actions {
     align-items: stretch;
     flex-direction: column;
   }
