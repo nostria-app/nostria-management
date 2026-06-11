@@ -25,6 +25,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/payments/payment-management').then(m => m.PaymentManagement)
   },
   {
+    path: 'wallet',
+    loadComponent: () => import('./features/payment-processor-wallet/payment-processor-wallet').then(m => m.PaymentProcessorWallet)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/settings-management').then(m => m.SettingsManagement)
   },

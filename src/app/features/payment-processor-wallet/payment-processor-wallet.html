@@ -1,0 +1,164 @@
+<section class="wallet-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Lightning operations</p>
+      <h2>Payment Processor Wallet</h2>
+    </div>
+
+    <button type="button" class="primary-button" (click)="refreshAll()" [disabled]="isLoading()">
+      @if (isLoading()) {
+        Refreshing
+      } @else {
+        Refresh
+      }
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert danger">{{ error() }}</div>
+  }
+
+  @if (success()) {
+    <div class="alert success">{{ success() }}</div>
+  }
+
+  @if (!access.isAdmin()) {
+    <section class="panel">
+      <div class="empty-inline">Admin access required.</div>
+    </section>
+  } @else {
+  <section class="panel">
+    <div class="panel-heading">
+      <h3>Access</h3>
+    </div>
+
+    <form [formGroup]="accessForm" class="access-grid">
+      <label>
+        Payment processor endpoint
+        <input type="url" formControlName="baseUrl" />
+      </label>
+
+      <label>
+        API key
+        <input type="password" formControlName="apiKey" autocomplete="off" />
+      </label>
+
+      <label>
+        External ID filter
+        <input type="text" formControlName="externalId" />
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" formControlName="all" />
+        Include all records
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" formControlName="rememberApiKey" />
+        Remember in this browser
+      </label>
+    </form>
+  </section>
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <span>Wallet balance</span>
+      <strong>{{ formatSats(walletBalanceSat()) }}</strong>
+    </div>
+
+    <div class="metric-card">
+      <span>Fee credit</span>
+      <strong>{{ formatSats(feeCreditSat()) }}</strong>
+    </div>
+
+    <div class="metric-card">
+      <span>Bitcoin price</span>
+      <strong>{{ formatUsd(price()?.usd) }}</strong>
+    </div>
+
+    <div class="metric-card">
+      <span>PhoenixD</span>
+      <strong>{{ status()?.status || 'Unknown' }}</strong>
+      <small>{{ status()?.chain || 'No chain' }} {{ status()?.blockHeight || '' }}</small>
+    </div>
+  </div>
+
+  <div class="workspace-grid">
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Pay invoice</h3>
+      </div>
+
+      <form [formGroup]="payForm" (ngSubmit)="payInvoice()" class="pay-form">
+        <label>
+          Lightning invoice
+          <textarea rows="5" formControlName="invoice"></textarea>
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" formControlName="confirmed" />
+          Confirm outgoing wallet payment
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="secondary-button" (click)="decodeInvoice()" [disabled]="!payForm.controls.invoice.value">
+            Decode
+          </button>
+          <button type="submit" class="primary-button" [disabled]="isPaying()">
+            @if (isPaying()) {
+              Paying
+            } @else {
+              Pay
+            }
+          </button>
+        </div>
+      </form>
+
+      @if (decodedInvoice(); as decoded) {
+        <div class="detail-box">
+          <h4>Decoded invoice</h4>
+          <pre>{{ rawJson(decoded) }}</pre>
+        </div>
+      }
+
+      @if (payResult(); as result) {
+        <div class="detail-box success-box">
+          <h4>Payment result</h4>
+          <pre>{{ rawJson(result) }}</pre>
+        </div>
+      }
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Transactions</h3>
+        <div class="segmented-control">
+          <button type="button" [class.active]="activeList() === 'incoming'" (click)="setActiveList('incoming')">
+            Incoming
+          </button>
+          <button type="button" [class.active]="activeList() === 'outgoing'" (click)="setActiveList('outgoing')">
+            Outgoing
+          </button>
+        </div>
+      </div>
+
+      <div class="transaction-list">
+        @for (record of activeTransactions(); track paymentHash(record)) {
+          <article class="transaction-row">
+            <div>
+              <strong>{{ paymentAmount(record) }}</strong>
+              <code>{{ paymentHash(record) }}</code>
+            </div>
+            <div class="transaction-meta">
+              <span>{{ record.externalId || record.description || activeList() }}</span>
+              <small>{{ paymentDate(record) }}</small>
+            </div>
+          </article>
+        } @empty {
+          <div class="empty-inline">No {{ activeList() }} transactions loaded.</div>
+        }
+      </div>
+    </section>
+  </div>
+  }
+</section>
