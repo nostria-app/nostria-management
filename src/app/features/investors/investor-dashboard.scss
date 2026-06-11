@@ -307,6 +307,26 @@ table {
   gap: 12px;
 }
 
+.info-box {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #c6d7f6;
+  border-radius: 8px;
+  background: #f4f8ff;
+  color: var(--text);
+
+  strong,
+  p {
+    margin: 0;
+  }
+
+  p {
+    color: var(--muted);
+    line-height: 1.45;
+  }
+}
+
 .stats-list {
   display: grid;
   gap: 10px;
