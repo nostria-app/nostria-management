@@ -286,15 +286,15 @@ export class ApiService {
     });
   }
 
-  async updateInvestor(pubkey: string, request: Partial<InvestorInput>): Promise<ApiResponse<Investor>> {
-    return this.makeAuthenticatedRequest<Investor>(`/investors/admin/investors/${pubkey}`, {
+  async updateInvestor(id: string, request: Partial<InvestorInput>): Promise<ApiResponse<Investor>> {
+    return this.makeAuthenticatedRequest<Investor>(`/investors/admin/investors/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: request
     });
   }
 
-  async deleteInvestor(pubkey: string): Promise<ApiResponse<{ success: boolean }>> {
-    return this.makeAuthenticatedRequest<{ success: boolean }>(`/investors/admin/investors/${pubkey}`, {
+  async deleteInvestor(id: string): Promise<ApiResponse<{ success: boolean }>> {
+    return this.makeAuthenticatedRequest<{ success: boolean }>(`/investors/admin/investors/${encodeURIComponent(id)}`, {
       method: 'DELETE'
     });
   }

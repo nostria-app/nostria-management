@@ -31,7 +31,7 @@
   @if (!access.hasPortalAccess()) {
     <div class="empty-panel">
       <h3>Sign in with your Nostr extension</h3>
-      <p>The portal will show either administration tools or investor reporting based on the signed pubkey.</p>
+      <p>The portal will show administration tools for admins or investor reporting for investor records that have a matching Nostr pubkey.</p>
     </div>
   } @else if (isLoading()) {
     <div class="empty-panel">
@@ -69,16 +69,21 @@
     <div class="admin-grid">
       <section class="panel">
         <div class="panel-heading">
-          <h3>{{ editingPubkey() ? 'Edit investor' : 'Add investor' }}</h3>
-          @if (editingPubkey()) {
+          <h3>{{ editingInvestorId() ? 'Edit investor' : 'Add investor' }}</h3>
+          @if (editingInvestorId()) {
             <button type="button" class="text-button" (click)="clearInvestorForm()">Cancel edit</button>
           }
         </div>
 
         <form [formGroup]="investorForm" (ngSubmit)="saveInvestor()" class="form-grid">
           <label>
-            Pubkey or npub
-            <input type="text" formControlName="pubkey" [readonly]="!!editingPubkey()" />
+            Investor ID
+            <input type="text" formControlName="id" [readonly]="!!editingInvestorId()" />
+          </label>
+
+          <label>
+            Nostr pubkey or npub
+            <input type="text" formControlName="pubkey" />
           </label>
 
           <label>
@@ -111,7 +116,7 @@
 
           <div class="form-actions">
             <button type="submit" class="primary-button" [disabled]="savingInvestor()">
-              {{ editingPubkey() ? 'Save investor' : 'Add investor' }}
+              {{ editingInvestorId() ? 'Save investor' : 'Add investor' }}
             </button>
           </div>
         </form>
@@ -163,11 +168,11 @@
             </tr>
           </thead>
           <tbody>
-            @for (investor of admin.investors; track investor.pubkey) {
+            @for (investor of admin.investors; track investor.id) {
               <tr>
                 <td>
-                  <div class="primary-cell">{{ investor.displayName || shortPubkey(investor.pubkey) }}</div>
-                  <code>{{ investor.npub || shortPubkey(investor.pubkey) }}</code>
+                  <div class="primary-cell">{{ investor.displayName || investor.id }}</div>
+                  <code>{{ displayInvestorIdentity(investor) }}</code>
                 </td>
                 <td>{{ formatMoney(investor.investmentCents) }}</td>
                 <td>{{ formatPercent(investor.sharePartsPerMillion) }}</td>
@@ -194,7 +199,7 @@
           <article class="payout-card" [class.paid]="payout.status === 'paid'" [class.failed]="payout.status === 'failed'">
             <div>
               <div class="payout-title">
-                <strong>{{ payout.investor?.displayName || shortPubkey(payout.investorPubkey) }}</strong>
+                <strong>{{ displayPayoutInvestor(payout) }}</strong>
                 <span>{{ payout.period?.period || 'No period' }}</span>
               </div>
               <div class="payout-meta">

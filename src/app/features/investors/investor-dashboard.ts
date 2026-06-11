@@ -30,7 +30,7 @@ export class InvestorDashboard implements OnInit {
   protected readonly success = signal<string | null>(null);
   protected readonly adminDashboard = signal<InvestorAdminDashboardResponse | null>(null);
   protected readonly investorDashboard = signal<InvestorDashboardResponse | null>(null);
-  protected readonly editingPubkey = signal<string | null>(null);
+  protected readonly editingInvestorId = signal<string | null>(null);
   protected readonly savingInvestor = signal(false);
   protected readonly calculatingPeriod = signal(false);
   protected readonly payingPayoutId = signal<string | null>(null);
@@ -44,7 +44,8 @@ export class InvestorDashboard implements OnInit {
   protected payoutAmountsSat: Record<string, number | null> = {};
 
   protected readonly investorForm = this.fb.group({
-    pubkey: ['', [Validators.required]],
+    id: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9][a-zA-Z0-9._:-]{1,99}$/)]],
+    pubkey: [''],
     displayName: [''],
     investmentDollars: [0, [Validators.min(0)]],
     sharePercentage: [0, [Validators.min(0), Validators.max(100)]],
@@ -103,9 +104,10 @@ export class InvestorDashboard implements OnInit {
   }
 
   protected editInvestor(investor: Investor): void {
-    this.editingPubkey.set(investor.pubkey);
+    this.editingInvestorId.set(investor.id);
     this.investorForm.patchValue({
-      pubkey: investor.pubkey,
+      id: investor.id,
+      pubkey: investor.npub || investor.pubkey || '',
       displayName: investor.displayName || '',
       investmentDollars: investor.investmentCents / 100,
       sharePercentage: investor.sharePartsPerMillion / 10000,
@@ -115,8 +117,9 @@ export class InvestorDashboard implements OnInit {
   }
 
   protected clearInvestorForm(): void {
-    this.editingPubkey.set(null);
+    this.editingInvestorId.set(null);
     this.investorForm.reset({
+      id: '',
       pubkey: '',
       displayName: '',
       investmentDollars: 0,
@@ -140,7 +143,8 @@ export class InvestorDashboard implements OnInit {
       const value = this.investorForm.getRawValue();
       const sharePartsPerMillion = Math.round(Number(value.sharePercentage || 0) * 10000);
       const input: InvestorInput = {
-        pubkey: value.pubkey || '',
+        id: value.id || '',
+        pubkey: value.pubkey?.trim() || null,
         displayName: value.displayName || undefined,
         investmentCents: Math.round(Number(value.investmentDollars || 0) * 100),
         shareBasisPoints: Math.round(sharePartsPerMillion / 100),
@@ -149,16 +153,16 @@ export class InvestorDashboard implements OnInit {
         status: value.status === 'inactive' ? 'inactive' : 'active'
       };
 
-      const editingPubkey = this.editingPubkey();
-      const response = editingPubkey
-        ? await this.apiService.updateInvestor(editingPubkey, input)
+      const editingInvestorId = this.editingInvestorId();
+      const response = editingInvestorId
+        ? await this.apiService.updateInvestor(editingInvestorId, input)
         : await this.apiService.createInvestor(input);
 
       if (!response.success || !response.data) {
         throw new Error(response.message || 'Failed to save investor');
       }
 
-      this.success.set(editingPubkey ? 'Investor updated.' : 'Investor added.');
+      this.success.set(editingInvestorId ? 'Investor updated.' : 'Investor added.');
       this.clearInvestorForm();
       await this.load();
     } catch (error) {
@@ -173,7 +177,7 @@ export class InvestorDashboard implements OnInit {
     this.success.set(null);
 
     try {
-      const response = await this.apiService.deleteInvestor(investor.pubkey);
+      const response = await this.apiService.deleteInvestor(investor.id);
       if (!response.success) {
         throw new Error(response.message || 'Failed to delete investor');
       }
@@ -268,7 +272,32 @@ export class InvestorDashboard implements OnInit {
     return new Date(timestamp).toLocaleDateString();
   }
 
-  protected shortPubkey(pubkey: string): string {
-    return `${pubkey.slice(0, 10)}...${pubkey.slice(-6)}`;
+  protected displayInvestorIdentity(investor: Investor): string {
+    const nostrIdentity = investor.npub || investor.pubkey;
+    return nostrIdentity ? this.shortValue(nostrIdentity) : investor.id;
+  }
+
+  protected displayPayoutInvestor(payout: InvestorPayout): string {
+    if (payout.investor?.displayName) {
+      return payout.investor.displayName;
+    }
+
+    if (payout.investor?.id) {
+      return payout.investor.id;
+    }
+
+    return payout.investorId || this.shortValue(payout.investorPubkey) || 'Unknown investor';
+  }
+
+  protected shortValue(value?: string): string {
+    if (!value) {
+      return '';
+    }
+
+    if (value.length <= 18) {
+      return value;
+    }
+
+    return `${value.slice(0, 10)}...${value.slice(-6)}`;
   }
 }

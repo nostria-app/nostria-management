@@ -36,8 +36,8 @@
   @if (!access.hasPortalAccess()) {
     <div class="welcome-panel">
       <div>
-        <h3>Management and investor access are tied to your Nostr pubkey.</h3>
-        <p>Admins see the full operations menu. Investors see only investment analytics and payout history.</p>
+        <h3>Admins sign in with Nostr. Investors can be tracked with a manual ID or linked to a Nostr pubkey for self-service access.</h3>
+        <p>Admins see the full operations menu. Linked investors see only investment analytics and payout history.</p>
       </div>
       <button type="button" class="primary-button" (click)="signIn()" [disabled]="access.isLoading()">Sign in</button>
     </div>
@@ -98,7 +98,7 @@
           @for (payout of admin.recentPayouts.slice(0, 6); track payout.id) {
             <div class="compact-row">
               <div>
-                <strong>{{ payout.investor?.displayName || payout.investorPubkey.slice(0, 10) }}</strong>
+                <strong>{{ displayPayoutInvestor(payout) }}</strong>
                 <small>{{ payout.period?.period || 'No period' }} · {{ payout.status }}</small>
               </div>
               <span>{{ formatMoney(payout.amountCents) }}</span>

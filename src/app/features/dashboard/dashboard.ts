@@ -7,6 +7,7 @@ import { InvestorAccessService } from '../../core/services/investor-access.servi
 import {
   InvestorAdminDashboardResponse,
   InvestorDashboardResponse,
+  InvestorPayout,
   ServiceStatus
 } from '../../shared/models/api.models';
 
@@ -100,5 +101,25 @@ export class Dashboard implements OnInit {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+  }
+
+  protected displayPayoutInvestor(payout: InvestorPayout): string {
+    if (payout.investor?.displayName) {
+      return payout.investor.displayName;
+    }
+
+    if (payout.investor?.id) {
+      return payout.investor.id;
+    }
+
+    if (payout.investorId) {
+      return payout.investorId;
+    }
+
+    if (payout.investorPubkey) {
+      return `${payout.investorPubkey.slice(0, 10)}...${payout.investorPubkey.slice(-6)}`;
+    }
+
+    return 'Unknown investor';
   }
 }
