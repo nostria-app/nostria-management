@@ -402,7 +402,6 @@ export interface InvestorSession {
 
 export interface CalculateRevenueShareRequest {
   period?: string;
-  revenueShareBasisPoints?: number;
   notes?: string;
 }
 

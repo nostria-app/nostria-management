@@ -149,6 +149,24 @@
     font-size: 0.86rem;
   }
 
+  .static-field {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.86rem;
+
+    strong {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-muted);
+      color: var(--text);
+      padding: 0 10px;
+    }
+  }
+
   input,
   select {
     min-height: 40px;

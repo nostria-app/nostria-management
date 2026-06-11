@@ -61,7 +61,6 @@ export class InvestorDashboard implements OnInit {
 
   protected readonly periodForm = this.fb.group({
     period: [this.currentPeriod(), [Validators.required, Validators.pattern(/^\d{4}-\d{2}$/)]],
-    revenueSharePercentage: [50, [Validators.required, Validators.min(0), Validators.max(100)]],
     notes: ['']
   });
 
@@ -222,7 +221,6 @@ export class InvestorDashboard implements OnInit {
       const value = this.periodForm.getRawValue();
       const response = await this.apiService.calculateRevenueShare({
         period: value.period || this.currentPeriod(),
-        revenueShareBasisPoints: Math.round(Number(value.revenueSharePercentage || 0) * 100),
         notes: value.notes || undefined
       });
 
