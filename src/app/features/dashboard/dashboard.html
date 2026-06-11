@@ -112,6 +112,10 @@
   } @else if (investorDashboard(); as investor) {
     <div class="metric-grid investor">
       <div class="metric-card">
+        <span>Revenue since beginning</span>
+        <strong>{{ formatSatsWithUsdEstimate(investor.platformStats.payments.paidSubscriptionRevenueSat) }}</strong>
+      </div>
+      <div class="metric-card">
         <span>Total payouts received</span>
         <strong>{{ formatSatsWithUsdEstimate(investor.totals.paidPayoutsSat) }}</strong>
       </div>
@@ -135,7 +139,7 @@
         <a routerLink="/investors" class="text-link">Payout history</a>
       </div>
       <div class="history-list">
-        @for (item of investor.revenueHistory.slice(0, 8); track item.period) {
+        @for (item of investor.revenueHistory; track item.period) {
           <div class="history-row">
             <span>{{ item.period }}</span>
             <strong>{{ formatSatsWithUsdEstimate(item.investorPayoutSat) }}</strong>
