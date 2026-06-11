@@ -124,8 +124,8 @@
         <strong>{{ formatPercent(investor.investmentStats.sharePartsPerMillion) }}</strong>
       </div>
       <div class="metric-card">
-        <span>Payout multiple</span>
-        <strong>{{ investor.investmentStats.payoutMultiple.toFixed(2) }}x</strong>
+        <span>Investment</span>
+        <strong>{{ formatMoney(investor.investmentStats.investmentCents) }}</strong>
       </div>
     </div>
 
