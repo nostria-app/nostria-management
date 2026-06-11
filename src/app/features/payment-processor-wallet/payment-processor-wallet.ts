@@ -55,6 +55,8 @@ export class PaymentProcessorWallet implements OnInit {
     rememberApiKey: [false],
     all: [true],
     externalId: [''],
+    limit: [20, [Validators.required, Validators.min(1), Validators.max(200)]],
+    offset: [0, [Validators.required, Validators.min(0)]],
   });
 
   protected readonly payForm = this.fb.group({
@@ -128,10 +130,12 @@ export class PaymentProcessorWallet implements OnInit {
       const value = this.accessForm.getRawValue();
       const all = value.all !== false;
       const externalId = value.externalId?.trim() || '';
+      const limit = Number(value.limit || 20);
+      const offset = Number(value.offset || 0);
       const config = this.currentConfig();
       const [incoming, outgoing] = await Promise.all([
-        this.paymentProcessor.listIncoming(config, all, externalId),
-        this.paymentProcessor.listOutgoing(config, all, externalId),
+        this.paymentProcessor.listIncoming(config, { all, externalId, limit, offset }),
+        this.paymentProcessor.listOutgoing(config, { all, externalId, limit, offset }),
       ]);
 
       this.incoming.set(incoming);
@@ -194,6 +198,31 @@ export class PaymentProcessorWallet implements OnInit {
 
   protected setActiveList(list: 'incoming' | 'outgoing'): void {
     this.activeList.set(list);
+  }
+
+  protected async previousTransactionPage(): Promise<void> {
+    const limit = Number(this.accessForm.controls.limit.value || 20);
+    const offset = Math.max(0, Number(this.accessForm.controls.offset.value || 0) - limit);
+    this.accessForm.patchValue({ offset });
+    await this.loadTransactions();
+  }
+
+  protected async nextTransactionPage(): Promise<void> {
+    const limit = Number(this.accessForm.controls.limit.value || 20);
+    const offset = Number(this.accessForm.controls.offset.value || 0) + limit;
+    this.accessForm.patchValue({ offset });
+    await this.loadTransactions();
+  }
+
+  protected currentTransactionPage(): number {
+    const limit = Number(this.accessForm.controls.limit.value || 20);
+    const offset = Number(this.accessForm.controls.offset.value || 0);
+    return Math.floor(offset / limit) + 1;
+  }
+
+  protected canLoadNextPage(): boolean {
+    const limit = Number(this.accessForm.controls.limit.value || 20);
+    return this.incoming().length >= limit || this.outgoing().length >= limit;
   }
 
   protected activeTransactions(): PaymentProcessorRecord[] {

@@ -55,6 +55,15 @@ export interface PaymentProcessorPayInvoiceResult {
   [key: string]: unknown;
 }
 
+export interface PaymentProcessorListOptions {
+  all?: boolean;
+  externalId?: string;
+  limit?: number;
+  offset?: number;
+  from?: number;
+  to?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PaymentProcessorService {
   readonly defaultBaseUrl = environment.paymentProcessorBaseUrl || 'https://pay.ariton.app';
@@ -71,21 +80,19 @@ export class PaymentProcessorService {
     return this.get<PaymentProcessorBalance>(config.baseUrl, '/balance', { apikey: config.apiKey });
   }
 
-  async listIncoming(config: PaymentProcessorAccessConfig, all = true, externalId = ''): Promise<PaymentProcessorRecord[]> {
+  async listIncoming(config: PaymentProcessorAccessConfig, options: PaymentProcessorListOptions = {}): Promise<PaymentProcessorRecord[]> {
     const response = await this.get<unknown>(config.baseUrl, '/payments/incoming', {
       apikey: config.apiKey,
-      all: String(all),
-      externalId,
+      ...this.listParams(options),
     });
 
     return this.normalizePaymentList(response, 'incoming');
   }
 
-  async listOutgoing(config: PaymentProcessorAccessConfig, all = true, externalId = ''): Promise<PaymentProcessorRecord[]> {
+  async listOutgoing(config: PaymentProcessorAccessConfig, options: PaymentProcessorListOptions = {}): Promise<PaymentProcessorRecord[]> {
     const response = await this.get<unknown>(config.baseUrl, '/payments/outgoing', {
       apikey: config.apiKey,
-      all: String(all),
-      externalId,
+      ...this.listParams(options),
     });
 
     return this.normalizePaymentList(response, 'outgoing');
@@ -153,6 +160,17 @@ export class PaymentProcessorService {
       ...(record as PaymentProcessorRecord),
       type,
     }));
+  }
+
+  private listParams(options: PaymentProcessorListOptions): Record<string, string> {
+    return {
+      all: String(options.all ?? true),
+      externalId: options.externalId || '',
+      limit: options.limit ? String(options.limit) : '',
+      offset: options.offset ? String(options.offset) : '0',
+      from: options.from ? String(options.from) : '',
+      to: options.to ? String(options.to) : '',
+    };
   }
 
   private extractRecords(value: unknown, type: 'incoming' | 'outgoing'): unknown[] {

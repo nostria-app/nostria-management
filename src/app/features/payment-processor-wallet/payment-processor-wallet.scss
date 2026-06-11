@@ -64,7 +64,7 @@
 
 .access-grid {
   display: grid;
-  grid-template-columns: minmax(240px, 1.2fr) minmax(220px, 1fr) minmax(180px, 0.8fr) auto auto;
+  grid-template-columns: minmax(240px, 1.2fr) minmax(220px, 1fr) minmax(180px, 0.8fr) 110px 110px auto auto;
   gap: 14px;
   align-items: end;
 }
@@ -245,6 +245,21 @@ textarea {
   flex-wrap: wrap;
 }
 
+.panel-subtitle {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .transaction-list {
   display: grid;
   gap: 10px;
@@ -326,7 +341,8 @@ textarea {
   .page-heading,
   .panel-heading,
   .form-actions,
-  .transaction-actions {
+  .transaction-actions,
+  .pagination-row {
     align-items: stretch;
     flex-direction: column;
   }
