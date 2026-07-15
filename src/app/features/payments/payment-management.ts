@@ -299,6 +299,23 @@ export class PaymentManagement implements OnInit {
     window.open(`lightning:${invoice}`, '_blank');
   }
 
+  isStorePayment(payment: Payment): boolean {
+    return payment.paymentType === 'app-store' || payment.paymentType === 'play-store';
+  }
+
+  formatPaymentType(paymentType: string): string {
+    switch (paymentType) {
+      case 'ln':
+        return '⚡ Lightning';
+      case 'app-store':
+        return ' App Store';
+      case 'play-store':
+        return '▶ Play Store';
+      default:
+        return paymentType;
+    }
+  }
+
   refreshPaymentStatus(payment: Payment) {
     this.checkPaymentForm.patchValue({
       pubkey: '', // Would need actual pubkey

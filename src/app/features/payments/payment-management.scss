@@ -21,6 +21,27 @@
     }
   }
 
+  .store-info-section {
+    p {
+      color: #4b5563;
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+    }
+
+    .store-sku-list {
+      margin: 0;
+      padding-left: 1.25rem;
+      color: #374151;
+
+      code {
+        font-size: 0.9em;
+        background: #f3f4f6;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+      }
+    }
+  }
+
   .section {
     background: white;
     border-radius: 12px;

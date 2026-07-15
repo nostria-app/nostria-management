@@ -215,12 +215,12 @@ export interface CreatePaymentRequest {
 export interface Payment {
   id: string;
   type: string;
-  paymentType: string;
+  paymentType: 'ln' | 'app-store' | 'play-store' | string;
   lnHash?: string;
   lnInvoice: string;
   lnAmountSat: number;
   tier: Tier;
-  billingCycle: BillingCycle;
+  billingCycle: BillingCycle | string;
   priceCents: number;
   pubkey: string;
   isPaid: boolean;
@@ -229,6 +229,10 @@ export interface Payment {
   status: 'pending' | 'expired' | 'paid' | 'cancelled';
   created: number;
   modified: number;
+  /** App Store / Play Store fields (when paymentType is app-store or play-store) */
+  storeTransactionId?: string;
+  storeOriginalTransactionId?: string;
+  storeProductId?: string;
 }
 
 // Investor Management

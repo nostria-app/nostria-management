@@ -1,7 +1,21 @@
 <div class="payment-management">
   <div class="header">
     <h1>Payment Management</h1>
-    <p>Create Lightning invoices and manage subscription payments</p>
+    <p>Create Lightning invoices and review Lightning / App Store / Play Store subscription payments</p>
+  </div>
+
+  <div class="section store-info-section">
+    <h2>Native Store Purchases</h2>
+    <p>
+      iOS App Store and Android Play Store purchases are verified by the backend via
+      <code>POST /api/account/verify-store-purchase</code>. Successful purchases appear in the
+      payment list with type <strong>app-store</strong> or <strong>play-store</strong>, including
+      store transaction and product ids.
+    </p>
+    <ul class="store-sku-list">
+      <li><code>nostria_premium_monthly</code> — primary App Store / Play SKU (Premium monthly)</li>
+      <li>Other catalog SKUs: premium quarterly/yearly, premium_plus, username (one-time)</li>
+    </ul>
   </div>
 
   <!-- Tier Information -->
@@ -382,7 +396,7 @@
                   <div class="detail-item">
                     <label>Type:</label>
                     <span class="payment-type">
-                      {{ payment.paymentType === 'ln' ? '⚡ Lightning' : payment.paymentType }}
+                      {{ formatPaymentType(payment.paymentType) }}
                     </span>
                   </div>
                   <div class="detail-item">
@@ -398,8 +412,14 @@
                 <!-- Second Row: Amount, Price, User -->
                 <div class="detail-row">
                   <div class="detail-item">
-                    <label>Lightning Amount:</label>
-                    <span class="amount">{{ payment.lnAmountSat }} sats</span>
+                    <label>{{ isStorePayment(payment) ? 'Store amount:' : 'Lightning Amount:' }}</label>
+                    <span class="amount">
+                      @if (isStorePayment(payment)) {
+                        ${{ (payment.priceCents / 100).toFixed(2) }}
+                      } @else {
+                        {{ payment.lnAmountSat }} sats
+                      }
+                    </span>
                   </div>
                   <div class="detail-item">
                     <label>Price:</label>
@@ -418,6 +438,23 @@
                     </a>
                   </div>
                 </div>
+
+                @if (payment.storeProductId || payment.storeTransactionId) {
+                  <div class="detail-row">
+                    @if (payment.storeProductId) {
+                      <div class="detail-item">
+                        <label>Store product:</label>
+                        <code>{{ payment.storeProductId }}</code>
+                      </div>
+                    }
+                    @if (payment.storeTransactionId) {
+                      <div class="detail-item full-width">
+                        <label>Store transaction:</label>
+                        <code class="ln-hash">{{ payment.storeTransactionId }}</code>
+                      </div>
+                    }
+                  </div>
+                }
 
                 <!-- Third Row: Timestamps -->
                 <div class="detail-row">
@@ -454,7 +491,7 @@
 
               <!-- Actions -->
               <div class="payment-actions">
-                @if (payment.lnInvoice && payment.status !== 'paid') {
+                @if (!isStorePayment(payment) && payment.lnInvoice && payment.status !== 'paid') {
                   <button 
                     class="btn-sm btn-primary" 
                     (click)="openLightningInvoice(payment.lnInvoice)"
